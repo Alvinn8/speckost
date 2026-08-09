@@ -1,3 +1,4 @@
+import { ApiError, messageForStatus } from './errors'
 import type {
   FoodItem,
   FoodItemRelation,
@@ -9,13 +10,18 @@ import type {
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  })
+  let res: Response
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options,
+    })
+  } catch (error) {
+    throw new ApiError('Kunde inte nå servern. Kontrollera din anslutning.', null, { cause: error })
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body.error ?? `Request failed: ${res.status}`)
+    throw new ApiError(body.error ?? messageForStatus(res.status), res.status)
   }
   if (res.status === 204) return undefined as T
   return res.json()

@@ -17,12 +17,12 @@ import {
   Tag,
   ToggleButton,
   useConfirm,
-  useToast,
 } from 'primevue'
+import { useAppToast } from '@/composables/useAppToast'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
-const toast = useToast()
+const toast = useAppToast()
 const confirm = useConfirm()
 const route = useRoute()
 
@@ -55,14 +55,13 @@ onMounted(async () => {
       foodItemsApi.all(),
     ])
   } catch (error) {
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to fetch food item' })
-    console.error('Error fetching food item:', error)
+    toast.fromError(error, 'Kunde inte hämta livsmedlet.')
   }
 })
 
 async function addChild() {
   if (newChildId.value === null) {
-    toast.add({ severity: 'warn', summary: 'Error', detail: 'Select a food item to add' })
+    toast.warn('Välj ett livsmedel att lägga till.')
     return
   }
   adding.value = true
@@ -76,13 +75,9 @@ async function addChild() {
     foodItem.value?.children.push(relation)
     newChildId.value = null
     newOptional.value = false
+    toast.success(`Relationen till ${relation.child.svName} lades till.`)
   } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: error instanceof Error ? error.message : 'Failed to add relation',
-    })
-    console.error('Error adding relation:', error)
+    toast.fromError(error, 'Kunde inte lägga till relationen.')
   } finally {
     adding.value = false
   }
@@ -105,13 +100,9 @@ async function removeChild(relation: FoodItemRelation) {
     if (foodItem.value) {
       foodItem.value.children = foodItem.value.children.filter((it) => it.id !== relation.id)
     }
+    toast.success(`Relationen till ${relation.child.svName} togs bort.`)
   } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: error instanceof Error ? error.message : 'Failed to remove relation',
-    })
-    console.error('Error removing relation:', error)
+    toast.fromError(error, 'Kunde inte ta bort relationen.')
   }
 }
 </script>

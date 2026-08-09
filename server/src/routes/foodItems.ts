@@ -33,7 +33,7 @@ router.get('/:id', async (req, res) => {
     },
   })
   if (!foodItem) {
-    return res.status(404).json({ error: 'Food item not found' })
+    return res.status(404).json({ error: 'Livsmedlet kunde inte hittas.' })
   }
   const { relationsAsParent, ...rest } = foodItem
   return res.json({ ...rest, children: relationsAsParent })
@@ -46,13 +46,13 @@ router.post('/:id/children', async (req, res) => {
   const optional = Boolean(req.body.optional)
 
   if (!Number.isInteger(childId)) {
-    return res.status(400).json({ error: 'A child food item is required' })
+    return res.status(400).json({ error: 'Välj ett livsmedel att lägga till.' })
   }
   if (childId === id) {
-    return res.status(400).json({ error: 'A food item cannot be related to itself' })
+    return res.status(400).json({ error: 'Ett livsmedel kan inte ha en relation till sig självt.' })
   }
   if (!relationTypes.includes(relationType)) {
-    return res.status(400).json({ error: 'An unknown relation type was given' })
+    return res.status(400).json({ error: 'Okänd relationstyp.' })
   }
 
   const [parent, child] = await Promise.all([
@@ -60,17 +60,17 @@ router.post('/:id/children', async (req, res) => {
     db.foodItem.findUnique({ where: { id: childId } }),
   ])
   if (!parent) {
-    return res.status(404).json({ error: 'Food item not found' })
+    return res.status(404).json({ error: 'Livsmedlet kunde inte hittas.' })
   }
   if (!child) {
-    return res.status(404).json({ error: 'Child food item not found' })
+    return res.status(404).json({ error: 'Livsmedlet som relationen pekar på kunde inte hittas.' })
   }
 
   const existing = await db.foodItemRelation.findFirst({
     where: { fromId: id, toId: childId, relationType },
   })
   if (existing) {
-    return res.status(409).json({ error: 'That relation already exists' })
+    return res.status(409).json({ error: 'Relationen finns redan.' })
   }
 
   const relation = await db.foodItemRelation.create({
@@ -86,7 +86,7 @@ router.delete('/:id/children/:relationId', async (req, res) => {
 
   const relation = await db.foodItemRelation.findUnique({ where: { id: relationId } })
   if (!relation || relation.fromId !== id) {
-    return res.status(404).json({ error: 'Relation not found' })
+    return res.status(404).json({ error: 'Relationen kunde inte hittas.' })
   }
 
   await db.foodItemRelation.delete({ where: { id: relationId } })
@@ -96,7 +96,7 @@ router.delete('/:id/children/:relationId', async (req, res) => {
 router.post('/new', async (req, res) => {
   const { name, type } = req.body
   if (!name) {
-    return res.status(400).json({ error: 'Name is required' })
+    return res.status(400).json({ error: 'Ett namn krävs.' })
   }
   const foodItem = await db.foodItem.create({
     data: {

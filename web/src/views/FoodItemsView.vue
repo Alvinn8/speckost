@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { foodItemsApi } from '@/api/client'
 import { FoodItemType, type FoodItem } from '@/api/types'
-import { Button, DataTable, Column, InputText, useToast } from 'primevue'
+import { Button, DataTable, Column, InputText } from 'primevue'
+import { useAppToast } from '@/composables/useAppToast'
 import { onMounted, ref } from 'vue'
 
-const toast = useToast()
+const toast = useAppToast()
 
 const loading = ref(true)
 const categories = ref<FoodItem[]>([])
@@ -15,8 +16,7 @@ onMounted(async () => {
     categories.value = await foodItemsApi.categories()
     foodItems.value = await foodItemsApi.normal()
   } catch (error) {
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to fetch food items' })
-    console.error('Error fetching food items:', error)
+    toast.fromError(error, 'Kunde inte hämta livsmedel.')
   } finally {
     loading.value = false
   }
@@ -39,8 +39,7 @@ async function createNew(type: FoodItemType) {
       newFoodItemName.value = ''
     }
   } catch (error) {
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to create new item' })
-    console.error('Error creating new item:', error)
+    toast.fromError(error, 'Kunde inte skapa det nya livsmedlet.')
   } finally {
     creating.value = false
   }
