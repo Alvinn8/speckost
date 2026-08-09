@@ -7,9 +7,10 @@
   "exclude": [],
 
   "compilerOptions": {
-    // Vitest runs in a different environment than the application code.
-    // Adjust lib and types accordingly.
-    "lib": [],
+    // Vitest runs in a different environment than the application code, but the
+    // application code it imports is still written against the same language
+    // built-ins as `tsconfig.app.json`.
+    "lib": ["ES2022"],
     "types": ["node", "jsdom"],
 
     // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.
