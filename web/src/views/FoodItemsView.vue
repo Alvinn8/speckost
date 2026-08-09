@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { foodItemsApi } from '@/api/client'
 import { FoodItemType, type FoodItem } from '@/api/types'
+import { useAllFoodItems } from '@/stores/allFoodItems'
 import { Button, DataTable, Column, InputText, useToast } from 'primevue'
 import { onMounted, ref } from 'vue'
 
 const toast = useToast()
+const allFoodItems = useAllFoodItems()
 
 const loading = ref(true)
 const categories = ref<FoodItem[]>([])
@@ -31,6 +33,7 @@ async function createNew(type: FoodItemType) {
   const name = type === FoodItemType.CATEGORY ? newCategoryName.value : newFoodItemName.value
   try {
     const newItem = await foodItemsApi.create(name, type)
+    allFoodItems.addFoodItem(newItem)
     if (type === FoodItemType.CATEGORY) {
       categories.value.push(newItem)
       newCategoryName.value = ''
@@ -49,6 +52,12 @@ async function createNew(type: FoodItemType) {
 
 <template>
   <h2>Kategorier</h2>
+  <InputText
+    v-model="newCategoryName"
+    placeholder="Namn på ny kategori"
+    @keyup.enter="createNew(FoodItemType.CATEGORY)"
+  />
+  <Button :loading="creating" @click="createNew(FoodItemType.CATEGORY)" label="Skapa ny kategori" />
   <DataTable :value="categories" :loading="loading">
     <Column field="svName" header="Namn">
       <template #body="{ data }">
@@ -56,10 +65,18 @@ async function createNew(type: FoodItemType) {
       </template>
     </Column>
   </DataTable>
-  <InputText v-model="newCategoryName" placeholder="Namn på ny kategori" />
-  <Button :loading="creating" @click="createNew(FoodItemType.CATEGORY)" label="Skapa ny kategori" />
 
   <h2>Livsmedel</h2>
+  <InputText
+    v-model="newFoodItemName"
+    placeholder="Namn på nytt livsmedel"
+    @keyup.enter="createNew(FoodItemType.NORMAL)"
+  />
+  <Button
+    :loading="creating"
+    @click="createNew(FoodItemType.NORMAL)"
+    label="Skapa nytt livsmedel"
+  />
   <DataTable :value="foodItems" :loading="loading">
     <Column field="svName" header="Namn">
       <template #body="{ data }">
@@ -67,10 +84,4 @@ async function createNew(type: FoodItemType) {
       </template>
     </Column>
   </DataTable>
-  <InputText v-model="newFoodItemName" placeholder="Namn på nytt livsmedel" />
-  <Button
-    :loading="creating"
-    @click="createNew(FoodItemType.NORMAL)"
-    label="Skapa nytt livsmedel"
-  />
 </template>
