@@ -3,6 +3,13 @@ export enum FoodItemType {
   CATEGORY = 'CATEGORY',
 }
 
+export interface FoodItemCategory {
+  id: number
+  svName: string
+  enName: string | null
+  optional: boolean
+}
+
 export interface FoodItem {
   id: number
   svName: string
@@ -10,6 +17,7 @@ export interface FoodItem {
   svDescription?: string
   enDescription?: string
   type: FoodItemType
+  categories: FoodItemCategory[]
 }
 
 export enum FoodItemRelationType {

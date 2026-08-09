@@ -6,37 +6,123 @@ const router = express.Router()
 const relationTypes = ['CONTAINS', 'IS_A'] as const
 type RelationType = (typeof relationTypes)[number]
 
+interface FoodItemCategory {
+  id: number
+  svName: string
+  enName: string | null
+  optional: boolean
+}
+
+interface CategoryRow {
+  foodItemId: number
+  categoryId: number
+  categorySvName: string
+  categoryEnName: string | null
+  optional: boolean
+}
+
+async function fetchCategoriesByFoodItemId(
+  originId?: number,
+): Promise<Map<number, FoodItemCategory[]>> {
+  const originFilter = Number(originId) ?? null
+  const rows = await db.$queryRaw<CategoryRow[]>`
+    WITH RECURSIVE reachable("originId", "reachedId", mandatory) AS (
+      SELECT
+        r."fromId" AS "originId",
+        r."toId"   AS "reachedId",
+        (NOT r.optional) AS mandatory
+      FROM "FoodItemRelation" r
+      WHERE ${originFilter}::int IS NULL OR r."fromId" = ${originFilter}::int
+
+      UNION
+
+      SELECT
+        reachable."originId",
+        r."toId" AS "reachedId",
+        (NOT r.optional AND reachable.mandatory) AS mandatory
+      FROM reachable
+      JOIN "FoodItemRelation" r ON r."fromId" = reachable."reachedId"
+    )
+    SELECT
+      reachable."originId" AS "foodItemId",
+      fi.id                AS "categoryId",
+      fi."svName"          AS "categorySvName",
+      fi."enName"          AS "categoryEnName",
+      NOT bool_or(reachable.mandatory) AS optional
+    FROM reachable
+    JOIN "FoodItem" fi ON fi.id = reachable."reachedId"
+    WHERE fi.type = 'CATEGORY'::"FoodItemType"
+    GROUP BY reachable."originId", fi.id, fi."svName", fi."enName"
+    ORDER BY reachable."originId", fi."svName"
+  `
+
+  const map = new Map<number, FoodItemCategory[]>()
+  for (const row of rows) {
+    const list = map.get(row.foodItemId) ?? []
+    list.push({
+      id: row.categoryId,
+      svName: row.categorySvName,
+      enName: row.categoryEnName,
+      optional: row.optional,
+    })
+    map.set(row.foodItemId, list)
+  }
+  return map
+}
+
+function withCategories<T extends { id: number }>(
+  item: T,
+  categoriesMap: Map<number, FoodItemCategory[]>,
+): T & { categories: FoodItemCategory[] } {
+  return { ...item, categories: categoriesMap.get(item.id) ?? [] }
+}
+
 router.get('/', async (req, res) => {
-  const foodItems = await db.foodItem.findMany({ orderBy: { svName: 'asc' } })
-  return res.json(foodItems)
+  const [foodItems, categoriesMap] = await Promise.all([
+    db.foodItem.findMany({ orderBy: { svName: 'asc' } }),
+    fetchCategoriesByFoodItemId(),
+  ])
+  return res.json(foodItems.map((item) => withCategories(item, categoriesMap)))
 })
 
 router.get('/categories', async (req, res) => {
-  const categories = await db.foodItem.findMany({ where: { type: 'CATEGORY' } })
-  return res.json(categories)
+  const [categories, categoriesMap] = await Promise.all([
+    db.foodItem.findMany({ where: { type: 'CATEGORY' } }),
+    fetchCategoriesByFoodItemId(),
+  ])
+  return res.json(categories.map((item) => withCategories(item, categoriesMap)))
 })
 
 router.get('/normal', async (req, res) => {
-  const normalItems = await db.foodItem.findMany({ where: { type: 'NORMAL' } })
-  return res.json(normalItems)
+  const [normalItems, categoriesMap] = await Promise.all([
+    db.foodItem.findMany({ where: { type: 'NORMAL' } }),
+    fetchCategoriesByFoodItemId(),
+  ])
+  return res.json(normalItems.map((item) => withCategories(item, categoriesMap)))
 })
 
 router.get('/:id', async (req, res) => {
   const id = Number(req.params.id)
-  const foodItem = await db.foodItem.findUnique({
-    where: { id },
-    include: {
-      relationsAsParent: {
-        include: { child: true },
-        orderBy: { id: 'asc' },
+  const [foodItem, categoriesMap] = await Promise.all([
+    db.foodItem.findUnique({
+      where: { id },
+      include: {
+        relationsAsParent: {
+          include: { child: true },
+          orderBy: { id: 'asc' },
+        },
       },
-    },
-  })
+    }),
+    fetchCategoriesByFoodItemId(id),
+  ])
   if (!foodItem) {
     return res.status(404).json({ error: 'Food item not found' })
   }
   const { relationsAsParent, ...rest } = foodItem
-  return res.json({ ...rest, children: relationsAsParent })
+  return res.json({
+    ...withCategories(rest, categoriesMap),
+    children: relationsAsParent,
+  })
 })
 
 router.post('/new', async (req, res) => {

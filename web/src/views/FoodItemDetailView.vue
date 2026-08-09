@@ -113,6 +113,15 @@ async function addChild() {
       <Button icon="pi pi-check" @click="saveNewName" />
     </template>
     <p>Type: {{ foodItem.type }}</p>
+    <div style="margin-bottom: 1em">
+      <Tag
+        v-for="category in foodItem.categories"
+        :key="category.id"
+        :value="category.svName"
+        :severity="category.optional ? 'warn' : 'danger'"
+        style="margin-right: 4px"
+      />
+    </div>
     <Panel>
       <DataTable :value="foodItem.children" :loading="!foodItem">
         <template #empty>Det här livsmedlet har inget innehåll registrerat.</template>

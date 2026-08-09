@@ -2,7 +2,7 @@
 import { foodItemsApi } from '@/api/client'
 import { FoodItemType, type FoodItem } from '@/api/types'
 import { useAllFoodItems } from '@/stores/allFoodItems'
-import { Button, DataTable, Column, InputText, useToast } from 'primevue'
+import { Button, DataTable, Column, InputText, Tag, useToast } from 'primevue'
 import { onMounted, ref } from 'vue'
 
 const toast = useToast()
@@ -64,6 +64,17 @@ async function createNew(type: FoodItemType) {
         <RouterLink :to="`/food-items/${data.id}`">{{ data.svName }}</RouterLink>
       </template>
     </Column>
+    <Column header="Kategorier">
+      <template #body="{ data }: { data: FoodItem }">
+        <Tag
+          v-for="category in data.categories"
+          :key="category.id"
+          :value="category.svName"
+          :severity="category.optional ? 'warn' : 'danger'"
+          style="margin-right: 4px"
+        />
+      </template>
+    </Column>
   </DataTable>
 
   <h2>Livsmedel</h2>
@@ -81,6 +92,17 @@ async function createNew(type: FoodItemType) {
     <Column field="svName" header="Namn">
       <template #body="{ data }">
         <RouterLink :to="`/food-items/${data.id}`">{{ data.svName }}</RouterLink>
+      </template>
+    </Column>
+    <Column header="Kategorier">
+      <template #body="{ data }: { data: FoodItem }">
+        <Tag
+          v-for="category in data.categories"
+          :key="category.id"
+          :value="category.svName"
+          :severity="category.optional ? 'warn' : 'danger'"
+          style="margin-right: 4px"
+        />
       </template>
     </Column>
   </DataTable>
