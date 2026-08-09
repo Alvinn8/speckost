@@ -38,6 +38,7 @@ model FoodItem {
 
   relationsAsParent FoodItemRelation[] @relation("Parent")
   relationsAsChild  FoodItemRelation[] @relation("Child")
+  restrictions      Restriction[]
 }
 
 enum FoodItemRelationType {
@@ -62,4 +63,36 @@ model FoodItemRelation {
 
   parent FoodItem @relation("Parent", fields: [fromId], references: [id])
   child  FoodItem @relation("Child", fields: [toId], references: [id])
+}
+
+/**
+ * A person whose diet we keep track of.
+ */
+model Person {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restrictions Restriction[]
+}
+
+/**
+ * Something that stops a person from eating certain food items, for example a
+ * lactose intolerance, a legume allergy or being a vegetarian.
+ *
+ * The food items are the ones that may not be eaten. A food item is also off
+ * limits when one of its children, or their children, is restricted.
+ */
+model Restriction {
+  id            Int      @id @default(autoincrement())
+  svName        String
+  enName        String?
+  svDescription String?
+  enDescription String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  people    Person[]
+  foodItems FoodItem[]
 }

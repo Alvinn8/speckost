@@ -4,7 +4,12 @@ import type {
   FoodItemRelation,
   FoodItemRelationType,
   FoodItemType,
+  FoodItemVerdict,
   FoodItemWithChildren,
+  Person,
+  PersonWithRestrictions,
+  Restriction,
+  RestrictionWithFoodItems,
 } from './types'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
@@ -44,6 +49,45 @@ export const foodItemsApi = {
     }),
   removeChild: (id: number, relationId: number) =>
     request<void>(`/api/food-items/${id}/children/${relationId}`, {
+      method: 'DELETE',
+    }),
+}
+
+export const peopleApi = {
+  all: () => request<Person[]>('/api/people'),
+  create: (name: string) =>
+    request<Person>('/api/people/new', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+  get: (id: number) => request<PersonWithRestrictions>(`/api/people/${id}`),
+  addRestriction: (id: number, restrictionId: number) =>
+    request<Restriction>(`/api/people/${id}/restrictions`, {
+      method: 'POST',
+      body: JSON.stringify({ restrictionId }),
+    }),
+  removeRestriction: (id: number, restrictionId: number) =>
+    request<void>(`/api/people/${id}/restrictions/${restrictionId}`, {
+      method: 'DELETE',
+    }),
+  foodItems: (id: number) => request<FoodItemVerdict[]>(`/api/people/${id}/food-items`),
+}
+
+export const restrictionsApi = {
+  all: () => request<Restriction[]>('/api/restrictions'),
+  create: (name: string) =>
+    request<Restriction>('/api/restrictions/new', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+  get: (id: number) => request<RestrictionWithFoodItems>(`/api/restrictions/${id}`),
+  addFoodItem: (id: number, foodItemId: number) =>
+    request<FoodItem>(`/api/restrictions/${id}/food-items`, {
+      method: 'POST',
+      body: JSON.stringify({ foodItemId }),
+    }),
+  removeFoodItem: (id: number, foodItemId: number) =>
+    request<void>(`/api/restrictions/${id}/food-items/${foodItemId}`, {
       method: 'DELETE',
     }),
 }

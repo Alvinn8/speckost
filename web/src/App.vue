@@ -5,7 +5,11 @@ import { RouterLink, RouterView, useRoute } from 'vue-router'
 
 const route = useRoute()
 
-const items = [{ label: 'Livsmedel', icon: 'pi pi-sitemap', route: '/food-items' }]
+const items = [
+  { label: 'Livsmedel', icon: 'pi pi-sitemap', route: '/food-items' },
+  { label: 'Personer', icon: 'pi pi-users', route: '/people' },
+  { label: 'Restriktioner', icon: 'pi pi-ban', route: '/restrictions' },
+]
 
 const menuItems = computed(() =>
   items.map((item) => ({

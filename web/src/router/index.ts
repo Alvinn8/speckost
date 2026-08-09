@@ -6,6 +6,10 @@ const router = createRouter({
     { path: '/', component: () => import('../views/HomeView.vue') },
     { path: '/food-items', component: () => import('../views/FoodItemsView.vue') },
     { path: '/food-items/:id', component: () => import('../views/FoodItemDetailView.vue') },
+    { path: '/people', component: () => import('../views/PeopleView.vue') },
+    { path: '/people/:id', component: () => import('../views/PersonDetailView.vue') },
+    { path: '/restrictions', component: () => import('../views/RestrictionsView.vue') },
+    { path: '/restrictions/:id', component: () => import('../views/RestrictionDetailView.vue') },
   ],
 })
 
