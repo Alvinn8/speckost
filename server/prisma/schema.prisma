@@ -14,3 +14,52 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+enum FoodItemType {
+  /**
+   * For example carrot, rice, falafel.
+   */
+  NORMAL
+  /**
+   * For example lactose, gluten.
+   */
+  CATEGORY
+}
+
+model FoodItem {
+  id            Int          @id @default(autoincrement())
+  type          FoodItemType
+  svName        String
+  enName        String?
+  svDescription String?
+  enDescription String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  relationsAsParent FoodItemRelation[] @relation("Parent")
+  relationsAsChild  FoodItemRelation[] @relation("Child")
+}
+
+enum FoodItemRelationType {
+  /**
+   * For example, a sandwich contains bread and ham.
+   */
+  CONTAINS
+  /**
+   * For example, chickpeas are a type of legume.
+   */
+  IS_A
+}
+
+model FoodItemRelation {
+  id           Int                  @id @default(autoincrement())
+  fromId       Int
+  toId         Int
+  relationType FoodItemRelationType
+  optional     Boolean              @default(false)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  parent FoodItem @relation("Parent", fields: [fromId], references: [id])
+  child  FoodItem @relation("Child", fields: [toId], references: [id])
+}

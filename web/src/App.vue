@@ -1,11 +1,47 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { ConfirmDialog, Menubar, Toast } from 'primevue'
+import { computed } from 'vue'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
+
+const route = useRoute()
+
+const items = [{ label: 'Livsmedel', icon: 'pi pi-sitemap', route: '/food-items' }]
+
+const menuItems = computed(() =>
+  items.map((item) => ({
+    ...item,
+    class: route.path.startsWith(item.route) ? 'p-menubar-item-active' : '',
+  })),
+)
+</script>
 
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <Toast />
+  <ConfirmDialog />
+  <Menubar :model="menuItems">
+    <template #start>
+      <RouterLink to="/" style="font-weight: 700; color: black; text-decoration: none">
+        <span>Speckost</span>
+      </RouterLink>
+    </template>
+    <template #item="{ item, props }">
+      <RouterLink v-if="item.route" v-slot="{ href, navigate }" :to="item.route" custom>
+        <a v-ripple :href="href" v-bind="props.action" @click="navigate">
+          <span :class="item.icon" />
+          <span>{{ item.label }}</span>
+        </a>
+      </RouterLink>
+    </template>
+  </Menubar>
+  <main style="max-width: 1100px; margin: 0 auto; padding: 1.5rem">
+    <RouterView />
+  </main>
 </template>
 
-<style scoped></style>
+<style>
+body {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+</style>
