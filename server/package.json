@@ -5,6 +5,7 @@
   "private": true,
   "type": "module",
   "main": "index.js",
+  "packageManager": "pnpm@11.5.1",
   "scripts": {
     "start": "node src/index.ts",
     "watch": "node --watch src/index.ts"
