@@ -9,7 +9,7 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U username -d speckost"]
+      test: ['CMD-SHELL', 'pg_isready -U username -d speckost']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -25,10 +25,13 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ./web
+    build:
+      context: ./web
+      args:
+        VITE_BASE_PATH: /speckost/
     restart: unless-stopped
     ports:
-      - "80:80"
+      - '4149:80'
     depends_on:
       - backend
 

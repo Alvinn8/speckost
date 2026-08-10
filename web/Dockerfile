@@ -9,6 +9,9 @@ RUN corepack install
 RUN pnpm install --frozen-lockfile
 
 COPY . .
+
+ARG VITE_BASE_PATH=/
+ENV VITE_BASE_PATH=$VITE_BASE_PATH
 RUN pnpm build
 
 FROM nginx:alpine
