@@ -31,7 +31,7 @@ services:
         VITE_BASE_PATH: /speckost/
     restart: unless-stopped
     ports:
-      - '4149:80'
+      - '4152:80'
     depends_on:
       - backend
 

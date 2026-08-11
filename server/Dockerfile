@@ -9,6 +9,7 @@ RUN corepack install
 COPY prisma ./prisma
 
 RUN pnpm install --frozen-lockfile
+RUN pnpm prisma generate
 
 COPY . .
 
