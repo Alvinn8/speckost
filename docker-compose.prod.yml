@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: speckost
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql/
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U username -d speckost']
       interval: 5s
@@ -29,6 +29,7 @@ services:
       context: ./web
       args:
         VITE_BASE_PATH: /speckost/
+        NGINX_BASE_PATH: /speckost/
     restart: unless-stopped
     ports:
       - '4152:80'
