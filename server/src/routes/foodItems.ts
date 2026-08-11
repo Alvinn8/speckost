@@ -1,10 +1,8 @@
 import express from 'express'
 import { db } from '../prisma/db.ts'
+import { FoodItemRelationType, FoodItemType } from '@prisma/client'
 
 const router = express.Router()
-
-const relationTypes = ['CONTAINS', 'IS_A'] as const
-type RelationType = (typeof relationTypes)[number]
 
 interface FoodItemCategory {
   id: number
@@ -78,27 +76,13 @@ function withCategories<T extends { id: number }>(
 }
 
 router.get('/', async (req, res) => {
+  const typeFilter = String(req.query.type) as FoodItemType
+  const where = Object.values(FoodItemType).includes(typeFilter) ? { type: typeFilter } : undefined
   const [foodItems, categoriesMap] = await Promise.all([
-    db.foodItem.findMany({ orderBy: { svName: 'asc' } }),
+    db.foodItem.findMany({ orderBy: { svName: 'asc' }, where }),
     fetchCategoriesByFoodItemId(),
   ])
   return res.json(foodItems.map((item) => withCategories(item, categoriesMap)))
-})
-
-router.get('/categories', async (req, res) => {
-  const [categories, categoriesMap] = await Promise.all([
-    db.foodItem.findMany({ where: { type: 'CATEGORY' } }),
-    fetchCategoriesByFoodItemId(),
-  ])
-  return res.json(categories.map((item) => withCategories(item, categoriesMap)))
-})
-
-router.get('/normal', async (req, res) => {
-  const [normalItems, categoriesMap] = await Promise.all([
-    db.foodItem.findMany({ where: { type: 'NORMAL' } }),
-    fetchCategoriesByFoodItemId(),
-  ])
-  return res.json(normalItems.map((item) => withCategories(item, categoriesMap)))
 })
 
 router.get('/:id', async (req, res) => {
@@ -142,7 +126,7 @@ router.post('/new', async (req, res) => {
 router.post('/:id/children', async (req, res) => {
   const id = Number(req.params.id)
   const childId = Number(req.body.childId)
-  const relationType = req.body.relationType as RelationType
+  const relationType = req.body.relationType as FoodItemRelationType
   const optional = Boolean(req.body.optional)
 
   if (childId === id) {
@@ -186,7 +170,7 @@ router.delete('/:id/children/:relationId', async (req, res) => {
 
 router.patch('/:id', async (req, res) => {
   const id = Number(req.params.id)
-  const { svName, enName, svDescription, enDescription } = req.body
+  const { svName, enName, svDescription, enDescription, type } = req.body
 
   const foodItem = await db.foodItem.findUnique({ where: { id } })
   if (!foodItem) {
@@ -195,7 +179,7 @@ router.patch('/:id', async (req, res) => {
 
   const updatedFoodItem = await db.foodItem.update({
     where: { id },
-    data: { svName, enName, svDescription, enDescription },
+    data: { svName, enName, svDescription, enDescription, type },
   })
   return res.json(updatedFoodItem)
 })

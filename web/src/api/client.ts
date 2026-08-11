@@ -4,6 +4,8 @@ import type {
   FoodItemRelationType,
   FoodItemType,
   FoodItemWithChildren,
+  Restriction,
+  RestrictionWithFoodItems,
 } from './types'
 
 const BASE_URL =
@@ -24,9 +26,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const foodItemsApi = {
-  all: () => request<FoodItem[]>('/api/food-items'),
-  categories: () => request<FoodItem[]>('/api/food-items/categories'),
-  normal: () => request<FoodItem[]>('/api/food-items/normal'),
+  list: (type?: FoodItemType) => {
+    const params = new URLSearchParams()
+    if (type) params.set('type', type)
+    return request<FoodItem[]>(`/api/food-items?${params}`)
+  },
   create: (name: string, type: FoodItemType) =>
     request<FoodItem>('/api/food-items/new', {
       method: 'POST',
@@ -45,6 +49,30 @@ export const foodItemsApi = {
     }),
   removeChild: (id: number, relationId: number) =>
     request<void>(`/api/food-items/${id}/children/${relationId}`, {
+      method: 'DELETE',
+    }),
+}
+
+export const restrictionsApi = {
+  list: () => request<Restriction[]>('/api/restrictions'),
+  get: (id: number) => request<RestrictionWithFoodItems>(`/api/restrictions/${id}`),
+  create: (name: string) =>
+    request<Restriction>('/api/restrictions/new', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+  patch: (id: number, name: string) =>
+    request<Restriction>(`/api/restrictions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name }),
+    }),
+  addFoodItem: (restrictionId: number, foodItemId: number) =>
+    request<void>(`/api/restrictions/${restrictionId}/food-items`, {
+      method: 'POST',
+      body: JSON.stringify({ foodItemId }),
+    }),
+  removeFoodItem: (restrictionId: number, foodItemId: number) =>
+    request<void>(`/api/restrictions/${restrictionId}/food-items/${foodItemId}`, {
       method: 'DELETE',
     }),
 }

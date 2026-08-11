@@ -14,8 +14,8 @@ const foodItems = ref<FoodItem[]>([])
 
 onMounted(async () => {
   try {
-    categories.value = await foodItemsApi.categories()
-    foodItems.value = await foodItemsApi.normal()
+    categories.value = await foodItemsApi.list(FoodItemType.CATEGORY)
+    foodItems.value = await foodItemsApi.list(FoodItemType.NORMAL)
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to fetch food items' })
     console.error('Error fetching food items:', error)

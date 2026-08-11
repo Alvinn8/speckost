@@ -14,7 +14,7 @@ export const useAllFoodItems = defineStore('all_food_items', () => {
     if (hasFetched.value) return
     hasFetched.value = true
     try {
-      const items = await foodItemsApi.all()
+      const items = await foodItemsApi.list()
       allFoodItems.value = items
     } catch (error) {
       toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to fetch all food items' })

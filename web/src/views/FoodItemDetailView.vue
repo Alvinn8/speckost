@@ -47,6 +47,12 @@ const relationTypeOptions = Object.values(FoodItemRelationType).map((value) => (
   label: relationTypeLabels[value],
 }))
 
+const typeOptions = [
+  { value: 'CATEGORY', label: 'Kategori (CATEGORY)' },
+  { value: 'NORMAL', label: 'Livsmedel (NORMAL)' },
+  { value: 'DISH', label: 'Maträtt (DISH)' },
+]
+
 watchEffect(async () => {
   try {
     foodItem.value = await foodItemsApi.get(id.value)
@@ -66,6 +72,17 @@ async function saveNewName() {
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to update name' })
     console.error('Error updating name:', error)
+  }
+}
+
+async function saveNewType() {
+  if (!foodItem.value) return
+  try {
+    const updatedItem = await foodItemsApi.patch(foodItem.value.id, { type: foodItem.value.type })
+    foodItem.value.type = updatedItem.type
+  } catch (error) {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to update type' })
+    console.error('Error updating type:', error)
   }
 }
 
@@ -112,7 +129,16 @@ async function addChild() {
       <InputText v-model="newName" @keyup.enter="saveNewName" @blur="saveNewName" />
       <Button icon="pi pi-check" @click="saveNewName" />
     </template>
-    <p>Type: {{ foodItem.type }}</p>
+    <div style="margin-bottom: 1em">
+      <span>Typ: </span>
+      <Select
+        v-model="foodItem.type"
+        :options="typeOptions"
+        option-label="label"
+        option-value="value"
+        @change="saveNewType"
+      />
+    </div>
     <div style="margin-bottom: 1em">
       <Tag
         v-for="category in foodItem.categories"

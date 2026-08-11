@@ -1,6 +1,7 @@
 export enum FoodItemType {
   NORMAL = 'NORMAL',
   CATEGORY = 'CATEGORY',
+  DISH = 'DISH',
 }
 
 export interface FoodItemCategory {
@@ -36,4 +37,17 @@ export interface FoodItemRelation {
 
 export interface FoodItemWithChildren extends FoodItem {
   children: FoodItemRelation[]
+}
+
+export interface Restriction {
+  id: number
+  svName: string
+  enName: string | null
+  svDescription: string | null
+  enDescription: string | null
+}
+
+export interface RestrictionWithFoodItems extends Restriction {
+  /** The food items that cannot be eaten. */
+  foodItems: FoodItem[]
 }

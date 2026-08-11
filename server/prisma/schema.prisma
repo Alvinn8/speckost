@@ -24,6 +24,10 @@ enum FoodItemType {
    * For example lactose, gluten.
    */
   CATEGORY
+  /**
+   * For example tacos.
+   */
+  DISH
 }
 
 model FoodItem {
