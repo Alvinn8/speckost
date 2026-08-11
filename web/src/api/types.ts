@@ -51,3 +51,16 @@ export interface RestrictionWithFoodItems extends Restriction {
   /** The food items that cannot be eaten. */
   foodItems: FoodItem[]
 }
+
+export interface PersonRestrictionWithRestriction {
+  id: number
+  personId: number
+  restrictionId: number
+  restriction: Restriction
+}
+
+export interface PersonWithRestrictions {
+  id: number
+  name: string
+  restrictions: PersonRestrictionWithRestriction[]
+}

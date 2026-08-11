@@ -9,6 +9,7 @@ const items = [
   { label: 'Livsmedel', icon: 'pi pi-sitemap', route: '/food-items' },
   { label: 'Matpreferenser / Allergier', icon: 'pi pi-palette', route: '/restrictions' },
   { label: 'Maträtter', icon: 'pi pi-receipt', route: '/dishes' },
+  { label: 'Personer', icon: 'pi pi-users', route: '/people' },
 ]
 
 const menuItems = computed(() =>

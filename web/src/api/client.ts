@@ -4,6 +4,8 @@ import type {
   FoodItemRelationType,
   FoodItemType,
   FoodItemWithChildren,
+  PersonRestrictionWithRestriction,
+  PersonWithRestrictions,
   Restriction,
   RestrictionWithFoodItems,
 } from './types'
@@ -73,6 +75,29 @@ export const restrictionsApi = {
     }),
   removeFoodItem: (restrictionId: number, foodItemId: number) =>
     request<void>(`/api/restrictions/${restrictionId}/food-items/${foodItemId}`, {
+      method: 'DELETE',
+    }),
+}
+
+export const peopleApi = {
+  list: () => request<PersonWithRestrictions[]>('/api/people'),
+  create: (name: string) =>
+    request<PersonWithRestrictions>('/api/people/new', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+  bulkCreate: (people: { name: string }[]) =>
+    request<PersonWithRestrictions[]>('/api/people/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ people }),
+    }),
+  addRestriction: (personId: number, restrictionId: number) =>
+    request<PersonRestrictionWithRestriction>(`/api/people/${personId}/restrictions`, {
+      method: 'POST',
+      body: JSON.stringify({ restrictionId }),
+    }),
+  removeRestriction: (personId: number, personRestrictionId: number) =>
+    request<void>(`/api/people/${personId}/restrictions/${personRestrictionId}`, {
       method: 'DELETE',
     }),
 }

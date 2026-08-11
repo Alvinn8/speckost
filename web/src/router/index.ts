@@ -9,6 +9,7 @@ const router = createRouter({
     { path: '/dishes', component: () => import('../views/DishesView.vue') },
     { path: '/restrictions', component: () => import('../views/RestrictionsView.vue') },
     { path: '/restrictions/:id', component: () => import('../views/RestrictionDetailView.vue') },
+    { path: '/people', component: () => import('../views/PeopleView.vue') },
   ],
 })
 

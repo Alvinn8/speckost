@@ -4,8 +4,10 @@ import { DataTable, Column, InputText, Button, useToast } from 'primevue'
 import { restrictionsApi } from '@/api/client'
 import type { Restriction } from '@/api/types'
 import { RouterLink } from 'vue-router'
+import { useAllRestrictions } from '@/stores/allRestrictions'
 
 const toast = useToast()
+const allRestrictions = useAllRestrictions()
 
 const loading = ref(false)
 const restrictions = ref<Restriction[]>([])
@@ -31,6 +33,7 @@ async function createNew() {
   try {
     const newItem = await restrictionsApi.create(name)
     restrictions.value.push(newItem)
+    allRestrictions.addRestriction(newItem)
     newDishName.value = ''
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to create new restriction' })
