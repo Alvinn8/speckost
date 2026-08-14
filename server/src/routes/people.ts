@@ -6,7 +6,6 @@ const router = express.Router()
 router.get('/', async (req, res) => {
   return res.json(
     await db.person.findMany({
-      orderBy: { name: 'asc' },
       include: { restrictions: { include: { restriction: true } } },
     }),
   )

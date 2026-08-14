@@ -14,6 +14,7 @@ import {
   Select,
   ToggleButton,
   InputText,
+  Textarea,
 } from 'primevue'
 import { computed, ref, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
@@ -27,6 +28,8 @@ const foodItem = ref<FoodItemWithChildren | null>(null)
 
 const editingName = ref(false)
 const newName = ref('')
+const editingDescription = ref(false)
+const newDescription = ref('')
 
 const newChildId = ref<number | null>(null)
 const newRelationType = ref<FoodItemRelationType>(FoodItemRelationType.CONTAINS)
@@ -57,6 +60,7 @@ watchEffect(async () => {
   try {
     foodItem.value = await foodItemsApi.get(id.value)
     newName.value = foodItem.value.svName
+    newDescription.value = foodItem.value.svDescription ?? ''
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to fetch food item' })
     console.error('Error fetching food item:', error)
@@ -83,6 +87,20 @@ async function saveNewType() {
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to update type' })
     console.error('Error updating type:', error)
+  }
+}
+
+async function saveNewDescription() {
+  if (!foodItem.value) return
+  try {
+    const updatedItem = await foodItemsApi.patch(foodItem.value.id, {
+      svDescription: newDescription.value,
+    })
+    foodItem.value.svDescription = updatedItem.svDescription
+    editingDescription.value = false
+  } catch (error) {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to update description' })
+    console.error('Error updating description:', error)
   }
 }
 
@@ -129,6 +147,28 @@ async function addChild() {
       <InputText v-model="newName" @keyup.enter="saveNewName" @blur="saveNewName" />
       <Button icon="pi pi-check" @click="saveNewName" />
     </template>
+    <p v-if="!editingDescription">
+      <template v-if="foodItem.svDescription">
+        {{ foodItem.svDescription }}
+        <Button icon="pi pi-pencil" severity="secondary" @click="editingDescription = true" />
+      </template>
+      <Button
+        v-else
+        severity="secondary"
+        label="Lägg till beskrivning"
+        @click="editingDescription = true"
+      />
+    </p>
+    <InputGroup v-else>
+      <Textarea
+        v-model="newDescription"
+        size="large"
+        fluid
+        @keyup.enter="saveNewDescription"
+        @blur="saveNewDescription"
+      />
+      <Button icon="pi pi-check" @click="saveNewDescription" />
+    </InputGroup>
     <div style="margin-bottom: 1em">
       <span>Typ: </span>
       <Select

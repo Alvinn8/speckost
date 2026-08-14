@@ -10,6 +10,7 @@ const router = createRouter({
     { path: '/restrictions', component: () => import('../views/RestrictionsView.vue') },
     { path: '/restrictions/:id', component: () => import('../views/RestrictionDetailView.vue') },
     { path: '/people', component: () => import('../views/PeopleView.vue') },
+    { path: '/compatibility', component: () => import('../views/CompatibilityView.vue') },
   ],
 })
 

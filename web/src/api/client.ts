@@ -4,6 +4,7 @@ import type {
   FoodItemRelationType,
   FoodItemType,
   FoodItemWithChildren,
+  GroupCompatibilityResult,
   PersonRestrictionWithRestriction,
   PersonWithRestrictions,
   Restriction,
@@ -99,5 +100,13 @@ export const peopleApi = {
   removeRestriction: (personId: number, personRestrictionId: number) =>
     request<void>(`/api/people/${personId}/restrictions/${personRestrictionId}`, {
       method: 'DELETE',
+    }),
+}
+
+export const compatibilityApi = {
+  check: (personIds: number[], foodItemIds: number[]) =>
+    request<GroupCompatibilityResult>('/api/compatibility', {
+      method: 'POST',
+      body: JSON.stringify({ personIds, foodItemIds }),
     }),
 }

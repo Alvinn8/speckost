@@ -64,3 +64,23 @@ export interface PersonWithRestrictions {
   name: string
   restrictions: PersonRestrictionWithRestriction[]
 }
+
+export type Verdict = 'COMPATIBLE' | 'INCOMPATIBLE' | 'OPTIONAL_COMPATIBLE'
+
+export interface CompatibilityHit {
+  verdict: Verdict
+  restrictionId: number
+  path: number[]
+  /** Whether the food item is only reached when optional relations are included. */
+  optional: boolean
+}
+
+export interface CompatibilityResult {
+  verdict: Verdict
+  hits: CompatibilityHit[]
+}
+
+export type GroupCompatibilityResult = {
+  personId: number
+  result: CompatibilityResult
+}[]

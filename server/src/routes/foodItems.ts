@@ -79,7 +79,7 @@ router.get('/', async (req, res) => {
   const typeFilter = String(req.query.type) as FoodItemType
   const where = Object.values(FoodItemType).includes(typeFilter) ? { type: typeFilter } : undefined
   const [foodItems, categoriesMap] = await Promise.all([
-    db.foodItem.findMany({ orderBy: { svName: 'asc' }, where }),
+    db.foodItem.findMany({ where }),
     fetchCategoriesByFoodItemId(),
   ])
   return res.json(foodItems.map((item) => withCategories(item, categoriesMap)))
