@@ -10,7 +10,7 @@ const items = [
   { label: 'Matpreferenser / Allergier', icon: 'pi pi-palette', route: '/restrictions' },
   { label: 'Maträtter', icon: 'pi pi-receipt', route: '/dishes' },
   { label: 'Personer', icon: 'pi pi-users', route: '/people' },
-  { label: 'Kompatibilitet', icon: 'pi pi-check-square', route: '/compatibility' },
+  { label: 'Vem kan äta?', icon: 'pi pi-check-square', route: '/check' },
 ]
 
 const menuItems = computed(() =>

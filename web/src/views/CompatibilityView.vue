@@ -54,27 +54,32 @@ watchEffect(async () => {
 
 const hideCompatibleRows = ref(true)
 
-const tableRows = computed<TableRow[]>(() => {
+const tableRows = computed<TableRowData[]>(() => {
   if (!compatibilityResult.value) return []
 
   return compatibilityResult.value
-    .map((result) => {
+    .flatMap((result) => {
       const person = allPeople.value.find((p) => p.id === result.personId)
-      return {
-        person,
-        verdict: result.result.verdict,
-        hits: result.result.hits,
-      }
+      if (!person) return []
+      return [
+        {
+          person,
+          verdict: result.result.verdict,
+          hits: result.result.hits,
+        },
+      ]
     })
     .filter((row) => !hideCompatibleRows.value || row.verdict !== 'COMPATIBLE')
 })
 
+type TableRowData = {
+  person: PersonWithRestrictions
+  verdict: Verdict
+  hits: CompatibilityHit[]
+}
+
 type TableRow = {
-  data: {
-    person: PersonWithRestrictions
-    verdict: Verdict
-    hits: CompatibilityHit[]
-  }
+  data: TableRowData
 }
 
 function getFoodItem(foodItemId: number) {
@@ -98,7 +103,7 @@ function getRestriction(restrictionId: number) {
     placeholder="Välj maträtter"
   />
   <div style="display: flex; align-items: center; margin: 1em 0px">
-    <Checkbox id="hide-compat" v-model="hideCompatibleRows" />
+    <Checkbox input-id="hide-compat" v-model="hideCompatibleRows" binary />
     <label for="hide-compat">Dölj kompatibla rader</label>
   </div>
   <DataTable :value="tableRows" :loading="loading" responsiveLayout="scroll">
