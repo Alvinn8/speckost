@@ -2,17 +2,8 @@
 import { peopleApi, personGroupsApi } from '@/api/client'
 import { type PersonGroup, type PersonGroupWithMembers, type PersonWithData } from '@/api/types'
 import PersonRestrictions from '@/components/PersonRestrictions.vue'
-import {
-  DataTable,
-  Column,
-  Button,
-  Select,
-  InputGroup,
-  Panel,
-  ProgressSpinner,
-  useToast,
-} from 'primevue'
-import { ref, onMounted, computed } from 'vue'
+import { DataTable, Column, Button, Select, InputGroup, Panel, useToast } from 'primevue'
+import { ref, computed, watchEffect } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
 const toast = useToast()
@@ -41,7 +32,7 @@ const selectableSubGroups = computed(() => {
   return allGroups.value.filter((g) => !groupSubGroupIds.has(g.id) && g.id !== id.value)
 })
 
-onMounted(async () => {
+watchEffect(async () => {
   loading.value = true
   try {
     group.value = await personGroupsApi.get(id.value)
@@ -108,9 +99,8 @@ async function removeSubGroup(subGroupIdToRemove: number) {
 
 <template>
   <h2>{{ group?.svName }}</h2>
-  <ProgressSpinner v-if="loading" />
   <Panel header="Undergrupper">
-    <DataTable :value="group?.subGroups">
+    <DataTable :value="group?.subGroups" :loading="loading">
       <Column header="Namn">
         <template #body="{ data }: { data: PersonGroup }">
           <RouterLink :to="`/groups/${data.id}`">
@@ -154,7 +144,7 @@ async function removeSubGroup(subGroupIdToRemove: number) {
     </template>
   </Panel>
   <Panel header="Direkta medlemmar" style="margin-top: 1em">
-    <DataTable :value="group?.people">
+    <DataTable :value="group?.people" :loading="loading">
       <Column field="name" header="Namn" />
       <Column field="restrictions" header="Matpreferenser / Allergier">
         <template #body="{ data }: { data: PersonWithData }">

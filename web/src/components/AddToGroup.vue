@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import { personGroupsApi } from '@/api/client'
-import type { PersonGroup } from '@/api/types'
-import { Select, Button } from 'primevue'
+import type { PersonGroup, PersonWithData } from '@/api/types'
+import { Select, Button, useToast } from 'primevue'
 import { onMounted, ref } from 'vue'
 
 const props = defineProps<{
-  personIds: number[]
+  people: PersonWithData[]
 }>()
+
+const emit = defineEmits<{
+  (e: 'added'): void
+}>()
+
+const toast = useToast()
 
 const groups = ref<PersonGroup[]>([])
 const selectedGroupId = ref<number | null>(null)
@@ -15,16 +21,31 @@ onMounted(async () => {
   try {
     groups.value = await personGroupsApi.list()
   } catch (error) {
-    console.error('Error fetching groups:', error)
+    toast.add({ severity: 'error', summary: 'Error', detail: (error as Error).message })
   }
 })
 
 async function addToGroup() {
   if (selectedGroupId.value === null) return
   try {
-    await personGroupsApi.addPersonBulk(selectedGroupId.value, props.personIds)
+    await personGroupsApi.addPersonBulk(
+      selectedGroupId.value,
+      props.people.map((p) => p.id),
+    )
+    const group = groups.value.find((g) => g.id === selectedGroupId.value)
+    if (group) {
+      props.people.forEach((p) => {
+        p.groups.push(group)
+      })
+    }
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: `${props.people.length} personer har lagts till i gruppen ${group?.svName}`,
+    })
+    emit('added')
   } catch (error) {
-    console.error('Error adding to group:', error)
+    toast.add({ severity: 'error', summary: 'Error', detail: (error as Error).message })
   }
 }
 </script>

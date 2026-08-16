@@ -108,7 +108,7 @@ async function importFromCopiedTable(e: ClipboardEvent) {
     :modal="true"
     :dismissableMask="true"
   >
-    <AddToGroup :personIds="selectedPeople.map((p) => p.id)" />
+    <AddToGroup :people="selectedPeople" @added="showAddToGroupDialog = false" />
   </Dialog>
   <Dialog
     header="Importera personer"
