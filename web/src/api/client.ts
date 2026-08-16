@@ -30,6 +30,24 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json()
 }
 
+async function postRequest<T>(path: string, body: object): Promise<T> {
+  return request<T>(path, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+async function patchRequest<T>(path: string, body: object): Promise<T> {
+  return request<T>(path, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+async function deleteRequest<T>(path: string): Promise<T> {
+  return request<T>(path, { method: 'DELETE' })
+}
+
 export const foodItemsApi = {
   list: (type?: FoodItemType) => {
     const params = new URLSearchParams()
@@ -37,117 +55,68 @@ export const foodItemsApi = {
     return request<FoodItem[]>(`/api/food-items?${params}`)
   },
   create: (name: string, type: FoodItemType) =>
-    request<FoodItem>('/api/food-items/new', {
-      method: 'POST',
-      body: JSON.stringify({ name, type }),
-    }),
+    postRequest<FoodItem>('/api/food-items/new', { name, type }),
   patch: (id: number, data: Partial<FoodItem>) =>
-    request<FoodItem>(`/api/food-items/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    }),
+    patchRequest<FoodItem>(`/api/food-items/${id}`, data),
   get: (id: number) => request<FoodItemWithChildren>(`/api/food-items/${id}`),
   addChild: (id: number, childId: number, relationType: FoodItemRelationType, optional: boolean) =>
-    request<FoodItemRelation>(`/api/food-items/${id}/children`, {
-      method: 'POST',
-      body: JSON.stringify({ childId, relationType, optional }),
+    postRequest<FoodItemRelation>(`/api/food-items/${id}/children`, {
+      childId,
+      relationType,
+      optional,
     }),
   removeChild: (id: number, relationId: number) =>
-    request<void>(`/api/food-items/${id}/children/${relationId}`, {
-      method: 'DELETE',
-    }),
+    deleteRequest<void>(`/api/food-items/${id}/children/${relationId}`),
 }
 
 export const restrictionsApi = {
   list: () => request<Restriction[]>('/api/restrictions'),
   get: (id: number) => request<RestrictionWithFoodItems>(`/api/restrictions/${id}`),
-  create: (name: string) =>
-    request<Restriction>('/api/restrictions/new', {
-      method: 'POST',
-      body: JSON.stringify({ name }),
-    }),
+  create: (name: string) => postRequest<Restriction>('/api/restrictions/new', { name }),
   patch: (id: number, name: string) =>
-    request<Restriction>(`/api/restrictions/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ name }),
-    }),
+    patchRequest<Restriction>(`/api/restrictions/${id}`, { name }),
   addFoodItem: (restrictionId: number, foodItemId: number) =>
-    request<void>(`/api/restrictions/${restrictionId}/food-items`, {
-      method: 'POST',
-      body: JSON.stringify({ foodItemId }),
-    }),
+    postRequest<void>(`/api/restrictions/${restrictionId}/food-items`, { foodItemId }),
   removeFoodItem: (restrictionId: number, foodItemId: number) =>
-    request<void>(`/api/restrictions/${restrictionId}/food-items/${foodItemId}`, {
-      method: 'DELETE',
-    }),
+    deleteRequest<void>(`/api/restrictions/${restrictionId}/food-items/${foodItemId}`),
 }
 
 export const peopleApi = {
   list: () => request<PersonWithData[]>('/api/people'),
-  create: (name: string) =>
-    request<PersonWithData>('/api/people/new', {
-      method: 'POST',
-      body: JSON.stringify({ name }),
-    }),
+  create: (name: string) => postRequest<PersonWithData>('/api/people/new', { name }),
   bulkCreate: (people: { name: string }[]) =>
-    request<PersonWithData[]>('/api/people/bulk', {
-      method: 'POST',
-      body: JSON.stringify({ people }),
-    }),
+    postRequest<PersonWithData[]>('/api/people/bulk', { people }),
   bulkDelete: (personIds: number[]) =>
     request<void>('/api/people/bulk', {
       method: 'DELETE',
       body: JSON.stringify({ personIds }),
     }),
   addRestriction: (personId: number, restrictionId: number) =>
-    request<PersonRestrictionWithRestriction>(`/api/people/${personId}/restrictions`, {
-      method: 'POST',
-      body: JSON.stringify({ restrictionId }),
+    postRequest<PersonRestrictionWithRestriction>(`/api/people/${personId}/restrictions`, {
+      restrictionId,
     }),
   removeRestriction: (personId: number, personRestrictionId: number) =>
-    request<void>(`/api/people/${personId}/restrictions/${personRestrictionId}`, {
-      method: 'DELETE',
-    }),
+    deleteRequest<void>(`/api/people/${personId}/restrictions/${personRestrictionId}`),
 }
 
 export const personGroupsApi = {
   list: () => request<PersonGroup[]>('/api/groups'),
   get: (id: number) => request<PersonGroupWithMembers>(`/api/groups/${id}`),
-  create: (name: string) =>
-    request<PersonGroup>('/api/groups/new', {
-      method: 'POST',
-      body: JSON.stringify({ name }),
-    }),
+  create: (name: string) => postRequest<PersonGroup>('/api/groups/new', { name }),
   allPeople: (groupId: number) => request<PersonWithData[]>(`/api/groups/${groupId}/all-people`),
   addPerson: (groupId: number, personId: number) =>
-    request<void>(`/api/groups/${groupId}/person`, {
-      method: 'POST',
-      body: JSON.stringify({ personId }),
-    }),
+    postRequest<void>(`/api/groups/${groupId}/person`, { personId }),
   addPersonBulk: (groupId: number, personIds: number[]) =>
-    request<void>(`/api/groups/${groupId}/person/bulk`, {
-      method: 'POST',
-      body: JSON.stringify({ personIds }),
-    }),
+    postRequest<void>(`/api/groups/${groupId}/person/bulk`, { personIds }),
   removePerson: (groupId: number, personId: number) =>
-    request<void>(`/api/groups/${groupId}/person/${personId}`, {
-      method: 'DELETE',
-    }),
+    deleteRequest<void>(`/api/groups/${groupId}/person/${personId}`),
   addSubGroup: (groupId: number, subGroupId: number) =>
-    request<void>(`/api/groups/${groupId}/sub-group`, {
-      method: 'POST',
-      body: JSON.stringify({ subGroupId }),
-    }),
+    postRequest<void>(`/api/groups/${groupId}/sub-group`, { subGroupId }),
   removeSubGroup: (groupId: number, subGroupId: number) =>
-    request<void>(`/api/groups/${groupId}/sub-group/${subGroupId}`, {
-      method: 'DELETE',
-    }),
+    deleteRequest<void>(`/api/groups/${groupId}/sub-group/${subGroupId}`),
 }
 
 export const compatibilityApi = {
   check: (personIds: number[], foodItemIds: number[]) =>
-    request<GroupCompatibilityResult>('/api/compatibility', {
-      method: 'POST',
-      body: JSON.stringify({ personIds, foodItemIds }),
-    }),
+    postRequest<GroupCompatibilityResult>('/api/compatibility', { personIds, foodItemIds }),
 }
