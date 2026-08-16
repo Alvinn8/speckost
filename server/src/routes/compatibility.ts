@@ -4,7 +4,7 @@ import { checkCompatibility } from '../util/compatibility.ts'
 
 const router = express.Router()
 
-router.post('/compatibility', async (req, res) => {
+router.post('/', async (req, res) => {
   const { personIds, foodItemIds } = req.body
 
   if (!Array.isArray(personIds) || !Array.isArray(foodItemIds)) {

@@ -59,10 +59,11 @@ export interface PersonRestrictionWithRestriction {
   restriction: Restriction
 }
 
-export interface PersonWithRestrictions {
+export interface PersonWithData {
   id: number
   name: string
   restrictions: PersonRestrictionWithRestriction[]
+  groups: PersonGroup[]
 }
 
 export type Verdict = 'COMPATIBLE' | 'INCOMPATIBLE' | 'OPTIONAL_COMPATIBLE'
@@ -84,3 +85,14 @@ export type GroupCompatibilityResult = {
   personId: number
   result: CompatibilityResult
 }[]
+
+export interface PersonGroup {
+  id: number
+  svName: string
+  enName?: string
+}
+
+export interface PersonGroupWithMembers extends PersonGroup {
+  subGroups: PersonGroup[]
+  people: PersonWithData[]
+}

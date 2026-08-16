@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { peopleApi } from '@/api/client'
-import type { PersonRestrictionWithRestriction, PersonWithRestrictions } from '@/api/types'
+import type { PersonRestrictionWithRestriction, PersonWithData } from '@/api/types'
 import { useAllRestrictions } from '@/stores/allRestrictions'
 import { MultiSelect } from 'primevue'
 import { ref, watchEffect } from 'vue'
 
 const props = defineProps<{
-  person: PersonWithRestrictions
+  person: PersonWithData
 }>()
 
 const emit = defineEmits<{

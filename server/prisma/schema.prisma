@@ -70,12 +70,13 @@ model FoodItemRelation {
 }
 
 model Person {
-  id                 Int                 @id @default(autoincrement())
-  name               String
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   restrictions PersonRestriction[]
+  groups       PersonGroup[]
 }
 
 model Restriction {
@@ -104,4 +105,17 @@ model PersonRestriction {
 
   person      Person      @relation(fields: [personId], references: [id])
   restriction Restriction @relation(fields: [restrictionId], references: [id])
+}
+
+model PersonGroup {
+  id        Int      @id @default(autoincrement())
+  svName    String
+  enName    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  people Person[]
+
+  subGroups    PersonGroup[] @relation("SubGroups")
+  parentGroups PersonGroup[] @relation("SubGroups")
 }

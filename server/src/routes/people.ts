@@ -6,7 +6,7 @@ const router = express.Router()
 router.get('/', async (req, res) => {
   return res.json(
     await db.person.findMany({
-      include: { restrictions: { include: { restriction: true } } },
+      include: { restrictions: { include: { restriction: true } }, groups: true },
     }),
   )
 })
@@ -27,6 +27,14 @@ router.post('/bulk', async (req, res) => {
     data: people.map((p: { name: string }) => ({ name: p.name })),
   })
   return res.json(createdPeople.map((person) => ({ ...person, restrictions: [] })))
+})
+
+router.delete('/bulk', async (req, res) => {
+  const { personIds } = req.body
+  await db.person.deleteMany({
+    where: { id: { in: personIds } },
+  })
+  return res.status(204).send()
 })
 
 router.post('/:id/restrictions', async (req, res) => {

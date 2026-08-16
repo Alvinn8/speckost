@@ -5,8 +5,10 @@ import type {
   FoodItemType,
   FoodItemWithChildren,
   GroupCompatibilityResult,
+  PersonGroup,
+  PersonGroupWithMembers,
   PersonRestrictionWithRestriction,
-  PersonWithRestrictions,
+  PersonWithData,
   Restriction,
   RestrictionWithFoodItems,
 } from './types'
@@ -81,16 +83,21 @@ export const restrictionsApi = {
 }
 
 export const peopleApi = {
-  list: () => request<PersonWithRestrictions[]>('/api/people'),
+  list: () => request<PersonWithData[]>('/api/people'),
   create: (name: string) =>
-    request<PersonWithRestrictions>('/api/people/new', {
+    request<PersonWithData>('/api/people/new', {
       method: 'POST',
       body: JSON.stringify({ name }),
     }),
   bulkCreate: (people: { name: string }[]) =>
-    request<PersonWithRestrictions[]>('/api/people/bulk', {
+    request<PersonWithData[]>('/api/people/bulk', {
       method: 'POST',
       body: JSON.stringify({ people }),
+    }),
+  bulkDelete: (personIds: number[]) =>
+    request<void>('/api/people/bulk', {
+      method: 'DELETE',
+      body: JSON.stringify({ personIds }),
     }),
   addRestriction: (personId: number, restrictionId: number) =>
     request<PersonRestrictionWithRestriction>(`/api/people/${personId}/restrictions`, {
@@ -99,6 +106,40 @@ export const peopleApi = {
     }),
   removeRestriction: (personId: number, personRestrictionId: number) =>
     request<void>(`/api/people/${personId}/restrictions/${personRestrictionId}`, {
+      method: 'DELETE',
+    }),
+}
+
+export const personGroupsApi = {
+  list: () => request<PersonGroup[]>('/api/groups'),
+  get: (id: number) => request<PersonGroupWithMembers>(`/api/groups/${id}`),
+  create: (name: string) =>
+    request<PersonGroup>('/api/groups/new', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+  allPeople: (groupId: number) => request<PersonWithData[]>(`/api/groups/${groupId}/all-people`),
+  addPerson: (groupId: number, personId: number) =>
+    request<void>(`/api/groups/${groupId}/person`, {
+      method: 'POST',
+      body: JSON.stringify({ personId }),
+    }),
+  addPersonBulk: (groupId: number, personIds: number[]) =>
+    request<void>(`/api/groups/${groupId}/person/bulk`, {
+      method: 'POST',
+      body: JSON.stringify({ personIds }),
+    }),
+  removePerson: (groupId: number, personId: number) =>
+    request<void>(`/api/groups/${groupId}/person/${personId}`, {
+      method: 'DELETE',
+    }),
+  addSubGroup: (groupId: number, subGroupId: number) =>
+    request<void>(`/api/groups/${groupId}/sub-group`, {
+      method: 'POST',
+      body: JSON.stringify({ subGroupId }),
+    }),
+  removeSubGroup: (groupId: number, subGroupId: number) =>
+    request<void>(`/api/groups/${groupId}/sub-group/${subGroupId}`, {
       method: 'DELETE',
     }),
 }

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { compatibilityApi, peopleApi } from '@/api/client'
+import { compatibilityApi, peopleApi, personGroupsApi } from '@/api/client'
 import type {
   GroupCompatibilityResult,
-  PersonWithRestrictions,
+  PersonWithData,
   Verdict,
   CompatibilityHit,
+  PersonGroup,
 } from '@/api/types'
 import { useAllFoodItems } from '@/stores/allFoodItems'
 import { useAllRestrictions } from '@/stores/allRestrictions'
@@ -14,10 +15,12 @@ import { computed, onMounted, ref, watchEffect } from 'vue'
 const toast = useToast()
 const allFoodItems = useAllFoodItems()
 const allRestrictions = useAllRestrictions()
-const allPeople = ref<PersonWithRestrictions[]>([])
+const allPeople = ref<PersonWithData[]>([])
+const allGroups = ref<PersonGroup[]>([])
 
 const selectedFoodItems = ref<number[]>([])
-const selectedPeople = ref<number[]>([])
+const selectedGroups = ref<number[]>([])
+const people = ref<number[]>([])
 
 const dishes = computed(() => allFoodItems.value.filter((item) => item.type === 'DISH'))
 
@@ -27,24 +30,36 @@ const loading = ref(false)
 onMounted(async () => {
   try {
     allPeople.value = await peopleApi.list()
-    selectedPeople.value = allPeople.value.map((p) => p.id)
+    allGroups.value = await personGroupsApi.list()
+    people.value = allPeople.value.map((p) => p.id)
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: (error as Error).message })
   }
 })
 
 watchEffect(async () => {
-  if (selectedFoodItems.value.length === 0 || selectedPeople.value.length === 0) {
+  if (selectedGroups.value.length === 0) {
+    people.value = allPeople.value.map((p) => p.id)
+  } else {
+    const selectedGroupIds = new Set(selectedGroups.value)
+    const peopleSet = new Set<number>()
+    for (const groupId of selectedGroupIds) {
+      const allPeople = await personGroupsApi.allPeople(groupId)
+      allPeople.forEach((p) => peopleSet.add(p.id))
+    }
+    people.value = Array.from(peopleSet)
+  }
+})
+
+watchEffect(async () => {
+  if (selectedFoodItems.value.length === 0 || people.value.length === 0) {
     compatibilityResult.value = null
     return
   }
 
   loading.value = true
   try {
-    compatibilityResult.value = await compatibilityApi.check(
-      selectedPeople.value,
-      selectedFoodItems.value,
-    )
+    compatibilityResult.value = await compatibilityApi.check(people.value, selectedFoodItems.value)
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: (error as Error).message })
   } finally {
@@ -73,7 +88,7 @@ const tableRows = computed<TableRowData[]>(() => {
 })
 
 type TableRowData = {
-  person: PersonWithRestrictions
+  person: PersonWithData
   verdict: Verdict
   hits: CompatibilityHit[]
 }
@@ -95,6 +110,13 @@ function getRestriction(restrictionId: number) {
   <h2>
     Vilka kan inte äta {{ selectedFoodItems.map((item) => getFoodItem(item)?.svName).join(', ') }}?
   </h2>
+  <MultiSelect
+    v-model="selectedGroups"
+    :options="allGroups"
+    option-label="svName"
+    option-value="id"
+    placeholder="Välj grupper"
+  />
   <MultiSelect
     v-model="selectedFoodItems"
     :options="dishes"
