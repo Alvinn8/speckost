@@ -35,6 +35,15 @@ onMounted(async () => {
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: (error as Error).message })
   }
+  const url = new URL(window.location.href)
+  const foodItemsParam = url.searchParams.get('foodItems')
+  const groupsParam = url.searchParams.get('groups')
+  if (foodItemsParam) {
+    selectedFoodItems.value = foodItemsParam.split(',').map((id) => Number(id))
+  }
+  if (groupsParam) {
+    selectedGroups.value = groupsParam.split(',').map((id) => Number(id))
+  }
 })
 
 watchEffect(async () => {
@@ -65,6 +74,11 @@ watchEffect(async () => {
   } finally {
     loading.value = false
   }
+
+  const url = new URL(window.location.href)
+  url.searchParams.set('foodItems', selectedFoodItems.value.join(','))
+  url.searchParams.set('groups', selectedGroups.value.join(','))
+  window.history.replaceState({}, '', url.toString())
 })
 
 const hideCompatibleRows = ref(true)
@@ -124,7 +138,7 @@ function getRestriction(restrictionId: number) {
     option-value="id"
     placeholder="Välj maträtter"
   />
-  <div style="display: flex; align-items: center; margin: 1em 0px">
+  <div style="display: flex; align-items: center; margin: 1em 0px; gap: 4px">
     <Checkbox input-id="hide-compat" v-model="hideCompatibleRows" binary />
     <label for="hide-compat">Dölj kompatibla rader</label>
   </div>
