@@ -97,7 +97,7 @@ router.get('/:id', async (req, res) => {
         },
       },
     }),
-    fetchCategoriesByFoodItemId(id),
+    fetchCategoriesByFoodItemId(),
   ])
   if (!foodItem) {
     return res.status(404).json({ error: 'Food item not found' })
@@ -105,7 +105,10 @@ router.get('/:id', async (req, res) => {
   const { relationsAsParent, ...rest } = foodItem
   return res.json({
     ...withCategories(rest, categoriesMap),
-    children: relationsAsParent,
+    children: relationsAsParent.map((item) => ({
+      ...item,
+      child: withCategories(item.child, categoriesMap),
+    })),
   })
 })
 

@@ -201,9 +201,15 @@ async function addChild() {
             <RouterLink :to="`/food-items/${data.child.id}`">{{ data.child.svName }}</RouterLink>
           </template>
         </Column>
-        <Column field="optional">
+        <Column>
           <template #body="{ data }: { data: FoodItemRelation }">
-            <Tag v-if="data.optional" :value="'Valfri'" severity="warn" />
+            <Tag
+              v-for="category in data.child.categories"
+              :key="category.id"
+              :value="category.svName"
+              :severity="category.optional ? 'warn' : 'danger'"
+              style="margin-right: 4px"
+            />
           </template>
         </Column>
         <Column>
