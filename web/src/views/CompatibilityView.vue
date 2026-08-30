@@ -101,6 +101,30 @@ const tableRows = computed<TableRowData[]>(() => {
     .filter((row) => !hideCompatibleRows.value || row.verdict !== 'COMPATIBLE')
 })
 
+const restrictionMatchesSummary = computed(() => {
+  const restrictionMatchCounts = new Map<string, number>() // key is CSV of distinct restriction IDs, sorted for uniqueness
+  for (const row of tableRows.value) {
+    if (row.verdict === 'COMPATIBLE') continue
+    const restrictionIds = row.hits
+      .map((hit) => hit.restrictionId)
+      .filter((id, index, array) => array.indexOf(id) === index) // https://stackoverflow.com/a/14438954
+      .sort((a, b) => a - b)
+    const key = restrictionIds.join(',')
+    restrictionMatchCounts.set(key, (restrictionMatchCounts.get(key) ?? 0) + 1)
+  }
+  return Array.from(restrictionMatchCounts.entries()).map(([key, count]) => {
+    const restrictionIds = key.split(',').map((id) => Number(id))
+    const restrictionNames = restrictionIds
+      .map((id) => getRestriction(id)?.svName)
+      .filter((name): name is string => name !== undefined)
+      .join(', ')
+    return {
+      restrictions: restrictionNames,
+      count,
+    }
+  })
+})
+
 type TableRowData = {
   person: PersonWithData
   verdict: Verdict
@@ -138,6 +162,13 @@ function getRestriction(restrictionId: number) {
     option-value="id"
     placeholder="Välj maträtter"
   />
+  <h3>Sammanfattning</h3>
+  <ul>
+    <li v-for="(summary, index) in restrictionMatchesSummary" :key="index">
+      {{ summary.count }} {{ summary.restrictions }}
+    </li>
+  </ul>
+  <h3>Alla träffar</h3>
   <div style="display: flex; align-items: center; margin: 1em 0px; gap: 4px">
     <Checkbox input-id="hide-compat" v-model="hideCompatibleRows" binary />
     <label for="hide-compat">Dölj kompatibla rader</label>
