@@ -4,7 +4,9 @@ import { db } from '../prisma/db.ts'
 const router = express.Router()
 
 router.get('/', async (req, res) => {
-  return res.json(await db.restriction.findMany({ orderBy: { svName: 'asc' } }))
+  return res.json(
+    await db.restriction.findMany({ orderBy: { svName: 'asc' }, include: { foodItems: true } }),
+  )
 })
 
 router.get('/:id', async (req, res) => {

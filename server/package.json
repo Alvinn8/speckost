@@ -8,7 +8,8 @@
   "packageManager": "pnpm@11.5.1",
   "scripts": {
     "start": "node src/index.ts",
-    "watch": "node --watch src/index.ts"
+    "watch": "node --watch src/index.ts",
+    "dev": "pnpm run watch"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",

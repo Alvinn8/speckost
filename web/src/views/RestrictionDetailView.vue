@@ -11,6 +11,7 @@ import {
   Panel,
   ProgressSpinner,
   useToast,
+  InputText,
 } from 'primevue'
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
@@ -26,10 +27,14 @@ const restriction = ref<RestrictionWithFoodItems | null>(null)
 const foodItemId = ref<number | null>(null)
 const adding = ref(false)
 
+const editingName = ref(false)
+const newName = ref('')
+
 onMounted(async () => {
   loading.value = true
   try {
     restriction.value = await restrictionsApi.get(id.value)
+    newName.value = restriction.value.svName
   } catch (error) {
     console.error('Error fetching restriction:', error)
     toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to fetch restriction' })
@@ -37,6 +42,18 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+async function saveNewName() {
+  if (!restriction.value) return
+  try {
+    await restrictionsApi.patch(id.value, newName.value)
+    restriction.value.svName = newName.value
+    editingName.value = false
+  } catch (error) {
+    console.error('Error updating restriction name:', error)
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to update name' })
+  }
+}
 
 async function addFoodItem() {
   if (foodItemId.value === null) return
@@ -65,7 +82,14 @@ async function removeFoodItem(foodItemIdToRemove: number) {
 </script>
 
 <template>
-  <h2>{{ restriction?.svName }}</h2>
+  <h2 v-if="!editingName">
+    {{ restriction?.svName }}
+    <Button icon="pi pi-pencil" severity="secondary" @click="editingName = true" />
+  </h2>
+  <h2 v-else>
+    <InputText v-model="newName" @keyup.enter="saveNewName" @blur="saveNewName" />
+    <Button icon="pi pi-check" @click="saveNewName" />
+  </h2>
   <ProgressSpinner v-if="loading" />
   <Panel header="Kan inte äta">
     <DataTable :value="restriction?.foodItems">

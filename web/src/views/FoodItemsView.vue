@@ -35,10 +35,10 @@ async function createNew(type: FoodItemType) {
     const newItem = await foodItemsApi.create(name, type)
     allFoodItems.addFoodItem(newItem)
     if (type === FoodItemType.CATEGORY) {
-      categories.value.push(newItem)
+      categories.value.unshift(newItem)
       newCategoryName.value = ''
     } else {
-      foodItems.value.push(newItem)
+      foodItems.value.unshift(newItem)
       newFoodItemName.value = ''
     }
   } catch (error) {

@@ -108,7 +108,7 @@ async function removeChild(relation: FoodItemRelation) {
   if (!foodItem.value) return
   try {
     await foodItemsApi.removeChild(foodItem.value.id, relation.id)
-    foodItem.value.children = foodItem.value.children.filter((child) => child.id !== relation.id)
+    foodItem.value = await foodItemsApi.get(foodItem.value.id)
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to remove child' })
     console.error('Error removing child:', error)
@@ -119,14 +119,14 @@ async function addChild() {
   if (!foodItem.value || newChildId.value === null) return
   adding.value = true
   try {
-    const newRelation = await foodItemsApi.addChild(
+    await foodItemsApi.addChild(
       foodItem.value.id,
       newChildId.value,
       newRelationType.value,
       newOptional.value,
     )
-    foodItem.value.children.push(newRelation)
     newChildId.value = null
+    foodItem.value = await foodItemsApi.get(foodItem.value.id)
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to add child' })
     console.error('Error adding child:', error)

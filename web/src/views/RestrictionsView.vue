@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { DataTable, Column, InputText, Button, useToast } from 'primevue'
+import { DataTable, Column, InputText, Button, useToast, Tag } from 'primevue'
 import { restrictionsApi } from '@/api/client'
 import type { Restriction } from '@/api/types'
 import { RouterLink } from 'vue-router'
@@ -55,6 +55,13 @@ async function createNew() {
         <RouterLink :to="`/restrictions/${slotProps.data.id}`">
           {{ slotProps.data.svName }}
         </RouterLink>
+        {{ ' ' }}
+        <Tag
+          v-if="slotProps.data.foodItems.length === 0"
+          icon="pi pi-exclamation-triangle"
+          severity="warn"
+          value="Ej konfigurerad"
+        />
       </template>
     </Column>
   </DataTable>

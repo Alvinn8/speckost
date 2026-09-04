@@ -1,4 +1,4 @@
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { defineStore } from 'pinia'
 import type { FoodItem } from '@/api/types'
 import { foodItemsApi } from '@/api/client'

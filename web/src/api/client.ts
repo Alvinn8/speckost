@@ -70,7 +70,7 @@ export const foodItemsApi = {
 }
 
 export const restrictionsApi = {
-  list: () => request<Restriction[]>('/api/restrictions'),
+  list: () => request<RestrictionWithFoodItems[]>('/api/restrictions'),
   get: (id: number) => request<RestrictionWithFoodItems>(`/api/restrictions/${id}`),
   create: (name: string) => postRequest<Restriction>('/api/restrictions/new', { name }),
   patch: (id: number, name: string) =>

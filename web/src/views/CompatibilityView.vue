@@ -154,6 +154,9 @@ function getRestriction(restrictionId: number) {
     option-label="svName"
     option-value="id"
     placeholder="Välj grupper"
+    filter
+    autoFilterFocus
+    :maxSelectedLabels="2"
   />
   <MultiSelect
     v-model="selectedFoodItems"
@@ -161,6 +164,9 @@ function getRestriction(restrictionId: number) {
     option-label="svName"
     option-value="id"
     placeholder="Välj maträtter"
+    filter
+    autoFilterFocus
+    :maxSelectedLabels="1"
   />
   <h3>Sammanfattning</h3>
   <ul>
