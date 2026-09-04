@@ -4,10 +4,9 @@ import type { FoodItem } from '@/api/types'
 export function parseContents(text: string, allFoodItems: FoodItem[]): ParseResult {
   const originalText = text
   const parts = text
-    .split(/\n|\.|(,(?![^(]*\)))/) // split on new line, period, or comma (but not commas inside parentheses)
+    .split(/\n|\.|((,|;)(?![^(]*\)))/) // split on new line, period, comma, or semicolon (but not commas inside parentheses)
     .map((item) => clean(item))
-    .filter((item) => Boolean(item) && item !== 'undefined' && item !== ',')
-  console.log(parts)
+    .filter((item) => Boolean(item) && item !== 'undefined' && item !== ',' && item !== ';')
 
   const lookup = createLookup(allFoodItems)
   const entries: ParseEntry[] = []
@@ -107,5 +106,10 @@ const transformations: Transformation[] = [
   (str: string) => {
     if (!str.includes(' och ')) return null
     return str.split(' och ').map((item) => clean(item))
+  },
+  // Convert "a: b" to ["a", "b"]
+  (str: string) => {
+    if (!str.includes(':')) return null
+    return str.split(':').map((item) => clean(item))
   },
 ]
