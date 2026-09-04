@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { foodItemsApi } from '@/api/client'
 import { FoodItemRelationType, type FoodItemRelation, type FoodItemWithChildren } from '@/api/types'
+import ParseContentsResult from '@/components/ParseContentsResult.vue'
 import { useAllFoodItems } from '@/stores/allFoodItems'
+import { parseContents, type ParseResult } from '@/util/parseContents'
 import {
   Button,
   DataTable,
@@ -12,9 +14,9 @@ import {
   Panel,
   InputGroup,
   Select,
-  ToggleButton,
   InputText,
   Textarea,
+  Dialog,
 } from 'primevue'
 import { computed, ref, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
@@ -33,12 +35,13 @@ const newDescription = ref('')
 
 const newChildId = ref<number | null>(null)
 const newRelationType = ref<FoodItemRelationType>(FoodItemRelationType.CONTAINS)
-const newOptional = ref(false)
 const adding = ref(false)
 
 const selectableFoodItems = computed(() =>
   allFoodItems.value.filter((item) => item.id !== id.value),
 )
+
+const parsedContents = ref<ParseResult | null>(null)
 
 const relationTypeLabels: Record<FoodItemRelationType, string> = {
   [FoodItemRelationType.CONTAINS]: 'Innehåller',
@@ -119,17 +122,38 @@ async function addChild() {
   if (!foodItem.value || newChildId.value === null) return
   adding.value = true
   try {
-    await foodItemsApi.addChild(
-      foodItem.value.id,
-      newChildId.value,
-      newRelationType.value,
-      newOptional.value,
-    )
+    await foodItemsApi.addChild(foodItem.value.id, newChildId.value, newRelationType.value, false)
     newChildId.value = null
     foodItem.value = await foodItemsApi.get(foodItem.value.id)
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to add child' })
     console.error('Error adding child:', error)
+  } finally {
+    adding.value = false
+  }
+}
+
+async function onPasteContents(e: ClipboardEvent) {
+  const text = e.clipboardData?.getData('text/plain')
+  if (!text) return
+  parsedContents.value = parseContents(text, allFoodItems.value)
+}
+
+async function addChildrenFromParsedContents(foodItemIds: number[]) {
+  if (!foodItem.value) return
+  adding.value = true
+  try {
+    await foodItemsApi.addChildrenBulk(
+      foodItem.value.id,
+      foodItemIds,
+      FoodItemRelationType.CONTAINS,
+      false,
+    )
+    parsedContents.value = null
+    foodItem.value = await foodItemsApi.get(foodItem.value.id)
+  } catch (error) {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to add children' })
+    console.error('Error adding children:', error)
   } finally {
     adding.value = false
   }
@@ -226,6 +250,7 @@ async function addChild() {
       </DataTable>
 
       <template #footer>
+        <b style="display: block; padding: 1em 0px">Lägg till</b>
         <InputGroup>
           <Select
             v-model="newRelationType"
@@ -244,7 +269,6 @@ async function addChild() {
             autoFilterFocus
             show-clear
           />
-          <ToggleButton v-model="newOptional" on-label="Valfri" off-label="Obligatorisk" />
           <Button
             icon="pi pi-plus"
             label="Lägg till"
@@ -253,7 +277,33 @@ async function addChild() {
             @click="addChild"
           />
         </InputGroup>
+        <em style="display: block; padding: 1em 0px">eller</em>
+        <InputText
+          value=""
+          @paste="onPasteContents"
+          placeholder="Klistra in innehållsförteckning här"
+          fluid
+        />
       </template>
     </Panel>
+    <Dialog
+      :visible="parsedContents !== null"
+      header="Matcha innehållsförteckning"
+      :modal="true"
+      :closable="true"
+      :dismissableMask="true"
+      @update:visible="
+        (val) => {
+          if (!val) parsedContents = null
+        }
+      "
+    >
+      <ParseContentsResult
+        v-if="parsedContents"
+        :parseResults="parsedContents"
+        @cancel="parsedContents = null"
+        @add="addChildrenFromParsedContents"
+      />
+    </Dialog>
   </div>
 </template>

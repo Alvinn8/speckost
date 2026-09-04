@@ -65,6 +65,17 @@ export const foodItemsApi = {
       relationType,
       optional,
     }),
+  addChildrenBulk: (
+    id: number,
+    foodItemIds: number[],
+    relationType: FoodItemRelationType,
+    optional: boolean,
+  ) =>
+    postRequest<FoodItemRelation[]>(`/api/food-items/${id}/children/bulk`, {
+      foodItemIds,
+      relationType,
+      optional,
+    }),
   removeChild: (id: number, relationId: number) =>
     deleteRequest<void>(`/api/food-items/${id}/children/${relationId}`),
 }

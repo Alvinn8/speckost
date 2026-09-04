@@ -158,6 +158,33 @@ router.post('/:id/children', async (req, res) => {
   return res.status(201).json(relation)
 })
 
+router.post('/:id/children/bulk', async (req, res) => {
+  const id = Number(req.params.id)
+  const foodItemIds = req.body.foodItemIds as number[]
+  const relationType = req.body.relationType as FoodItemRelationType
+  const optional = Boolean(req.body.optional)
+
+  const parent = await db.foodItem.findUnique({ where: { id } })
+  if (!parent) {
+    return res.status(404).json({ error: 'Food item not found' })
+  }
+
+  const existing = await db.foodItemRelation.findMany({
+    where: { fromId: id, toId: { in: foodItemIds } },
+  })
+  const newIds = foodItemIds.filter((foodItemId) => !existing.some((e) => e.toId === foodItemId))
+  const newRelations = await db.foodItemRelation.createMany({
+    data: newIds.map((id) => ({
+      fromId: parent.id,
+      toId: id,
+      relationType,
+      optional,
+    })),
+  })
+
+  return res.status(201).json(newRelations)
+})
+
 router.delete('/:id/children/:relationId', async (req, res) => {
   const id = Number(req.params.id)
   const relationId = Number(req.params.relationId)
