@@ -134,6 +134,7 @@ async function addChild() {
 }
 
 async function onPasteContents(e: ClipboardEvent) {
+  e.preventDefault()
   const text = e.clipboardData?.getData('text/plain')
   if (!text) return
   parsedContents.value = parseContents(text, allFoodItems.value)

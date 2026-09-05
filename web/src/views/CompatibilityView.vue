@@ -9,7 +9,7 @@ import type {
 } from '@/api/types'
 import { useAllFoodItems } from '@/stores/allFoodItems'
 import { useAllRestrictions } from '@/stores/allRestrictions'
-import { DataTable, Column, useToast, MultiSelect, Tag, Checkbox } from 'primevue'
+import { DataTable, Column, useToast, MultiSelect, Tag } from 'primevue'
 import { computed, onMounted, ref, watchEffect } from 'vue'
 
 const toast = useToast()
@@ -81,8 +81,6 @@ watchEffect(async () => {
   window.history.replaceState({}, '', url.toString())
 })
 
-const hideCompatibleRows = ref(true)
-
 const tableRows = computed<TableRowData[]>(() => {
   if (!compatibilityResult.value) return []
 
@@ -98,7 +96,7 @@ const tableRows = computed<TableRowData[]>(() => {
         },
       ]
     })
-    .filter((row) => !hideCompatibleRows.value || row.verdict !== 'COMPATIBLE')
+    .filter((row) => row.verdict !== 'COMPATIBLE')
 })
 
 const restrictionMatchesSummary = computed(() => {
@@ -175,11 +173,15 @@ function getRestriction(restrictionId: number) {
     </li>
   </ul>
   <h3>Alla träffar</h3>
-  <div style="display: flex; align-items: center; margin: 1em 0px; gap: 4px">
-    <Checkbox input-id="hide-compat" v-model="hideCompatibleRows" binary />
-    <label for="hide-compat">Dölj kompatibla rader</label>
-  </div>
-  <DataTable :value="tableRows" :loading="loading" responsiveLayout="scroll">
+  <DataTable
+    v-if="selectedFoodItems.length > 0"
+    :value="tableRows"
+    :loading="loading"
+    responsiveLayout="scroll"
+  >
+    <template #empty>
+      <div>✅ Alla kan äta</div>
+    </template>
     <Column header="Person">
       <template #body="{ data }: TableRow">
         <div style="display: flex; flex-direction: column">

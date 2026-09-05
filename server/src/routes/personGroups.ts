@@ -4,7 +4,7 @@ import { db } from '../prisma/db.ts'
 const router = express.Router()
 
 router.get('/', async (req, res) => {
-  return res.json(await db.personGroup.findMany())
+  return res.json(await db.personGroup.findMany({ orderBy: { id: 'desc' } }))
 })
 
 router.get('/:id', async (req, res) => {
