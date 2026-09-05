@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { compatibilityApi, peopleApi, personGroupsApi } from '@/api/client'
 import type {
+  AlternativeResolution,
   GroupCompatibilityResult,
   PersonWithData,
   Verdict,
@@ -10,7 +11,7 @@ import type {
 import { useAllFoodItems } from '@/stores/allFoodItems'
 import { useAllRestrictions } from '@/stores/allRestrictions'
 import { DataTable, Column, useToast, MultiSelect, Tag } from 'primevue'
-import { computed, onMounted, ref, watchEffect } from 'vue'
+import { computed, onMounted, ref, watch, watchEffect } from 'vue'
 
 const toast = useToast()
 const allFoodItems = useAllFoodItems()
@@ -74,11 +75,15 @@ watchEffect(async () => {
   } finally {
     loading.value = false
   }
+})
 
+watch([selectedFoodItems, selectedGroups], ([foodItems, groups]) => {
   const url = new URL(window.location.href)
-  url.searchParams.set('foodItems', selectedFoodItems.value.join(','))
-  url.searchParams.set('groups', selectedGroups.value.join(','))
-  window.history.replaceState({}, '', url.toString())
+  url.searchParams.set('foodItems', foodItems.join(','))
+  url.searchParams.set('groups', groups.join(','))
+  if (location.href !== url.toString()) {
+    window.history.pushState({}, '', url.toString())
+  }
 })
 
 const tableRows = computed<TableRowData[]>(() => {
@@ -93,6 +98,7 @@ const tableRows = computed<TableRowData[]>(() => {
           person,
           verdict: result.result.verdict,
           hits: result.result.hits,
+          alternativeResolutions: result.result.alternativeResolutions,
         },
       ]
     })
@@ -102,24 +108,27 @@ const tableRows = computed<TableRowData[]>(() => {
 const restrictionMatchesSummary = computed(() => {
   const restrictionMatchCounts = new Map<string, number>() // key is CSV of distinct restriction IDs, sorted for uniqueness
   for (const row of tableRows.value) {
-    if (row.verdict === 'COMPATIBLE') continue
-    const restrictionIds = row.hits
+    if (row.hits.length === 0 && row.alternativeResolutions.length === 0) continue
+    const restrictionNames = row.hits
       .map((hit) => hit.restrictionId)
       .filter((id, index, array) => array.indexOf(id) === index) // https://stackoverflow.com/a/14438954
       .sort((a, b) => a - b)
-    const key = restrictionIds.join(',')
-    restrictionMatchCounts.set(key, (restrictionMatchCounts.get(key) ?? 0) + 1)
-  }
-  return Array.from(restrictionMatchCounts.entries()).map(([key, count]) => {
-    const restrictionIds = key.split(',').map((id) => Number(id))
-    const restrictionNames = restrictionIds
       .map((id) => getRestriction(id)?.svName)
       .filter((name): name is string => name !== undefined)
       .join(', ')
-    return {
-      restrictions: restrictionNames,
-      count,
-    }
+    const replacementText = row.alternativeResolutions
+      .map((resolution) => {
+        const originalFoodItem = getFoodItem(resolution.originalFoodItemId)
+        const alternativeFoodItem = getFoodItem(resolution.alternativeFoodItemId)
+        return `Ersätt ${originalFoodItem?.svName} med ${alternativeFoodItem?.svName}`
+      })
+      .sort()
+      .join(', ')
+    const text = [restrictionNames, replacementText].filter((s) => s.length > 0).join('. ')
+    restrictionMatchCounts.set(text, (restrictionMatchCounts.get(text) ?? 0) + 1)
+  }
+  return Array.from(restrictionMatchCounts.entries()).map(([restrictions, count]) => {
+    return { restrictions, count }
   })
 })
 
@@ -127,6 +136,7 @@ type TableRowData = {
   person: PersonWithData
   verdict: Verdict
   hits: CompatibilityHit[]
+  alternativeResolutions: AlternativeResolution[]
 }
 
 type TableRow = {
@@ -139,6 +149,14 @@ function getFoodItem(foodItemId: number) {
 
 function getRestriction(restrictionId: number) {
   return allRestrictions.value.find((r) => r.id === restrictionId)
+}
+
+/** Distinct restriction names behind a set of hits, e.g. "Laktosintolerant, Baljväxter". */
+function restrictionNamesOf(hits: CompatibilityHit[]) {
+  return Array.from(new Set(hits.map((hit) => hit.restrictionId)))
+    .map((id) => getRestriction(id)?.svName)
+    .filter((name): name is string => name !== undefined)
+    .join(', ')
 }
 </script>
 
@@ -197,16 +215,49 @@ function getRestriction(restrictionId: number) {
         </div>
       </template>
     </Column>
-    <Column>
+    <Column :headerStyle="{ width: '40px' }">
       <template #body="{ data }: TableRow">
-        <span v-if="data.verdict === 'COMPATIBLE'">✅</span>
-        <span v-else-if="data.verdict === 'INCOMPATIBLE'">❌</span>
-        <span v-else-if="data.verdict === 'OPTIONAL_COMPATIBLE'">⚠️</span>
+        <span v-if="data.verdict === 'COMPATIBLE'" title="Kan äta">✅</span>
+        <span v-else-if="data.verdict === 'INCOMPATIBLE'" title="Kan inte äta">❌</span>
+        <span
+          v-else-if="data.verdict === 'OPTIONAL_COMPATIBLE'"
+          title="Kan äta om valfria delar skippas"
+          >⚠️</span
+        >
+        <span
+          v-else-if="data.verdict === 'ALTERNATIVE_COMPATIBLE'"
+          title="Kan äta om ett alternativ används"
+          >🔄</span
+        >
       </template>
     </Column>
     <Column field="hits" header="Träffar">
       <template #body="{ data }: TableRow">
-        <ul>
+        <ul v-if="data.alternativeResolutions.length > 0" style="margin: 0; padding-left: 1.2em">
+          <li v-for="(resolution, index) in data.alternativeResolutions" :key="`res-${index}`">
+            <strong>{{ restrictionNamesOf(resolution.originalHits) }}: </strong>
+            <span>
+              <template v-for="(foodItem, i) in resolution.path" :key="i">
+                <span
+                  :style="
+                    i === resolution.path.length - 1
+                      ? { textDecoration: 'line-through', color: '#b3261e' }
+                      : {}
+                  "
+                >
+                  {{ getFoodItem(foodItem)?.svName }}
+                </span>
+                <span v-if="i < resolution.path.length - 1"> → </span>
+              </template>
+              <span> → </span>
+              <span style="color: #1a7f37">
+                {{ getFoodItem(resolution.alternativeFoodItemId)?.svName }} ✅
+              </span>
+            </span>
+          </li>
+        </ul>
+
+        <ul v-if="data.hits.length > 0" style="margin: 0; padding-left: 1.2em">
           <li v-for="(hit, index) in data.hits" :key="index">
             <Tag v-if="hit.optional" severity="warning" label="Valfri" />
             <span>{{ getRestriction(hit.restrictionId)?.svName }}: </span>

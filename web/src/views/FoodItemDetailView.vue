@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { foodItemsApi } from '@/api/client'
-import { FoodItemRelationType, type FoodItemRelation, type FoodItemWithChildren } from '@/api/types'
+import {
+  FoodItemRelationType,
+  type FoodItemRelation,
+  type FoodItemRelationAlternative,
+  type FoodItemWithChildren,
+} from '@/api/types'
 import ParseContentsResult from '@/components/ParseContentsResult.vue'
 import { useAllFoodItems } from '@/stores/allFoodItems'
 import { parseContents, type ParseResult } from '@/util/parseContents'
@@ -37,6 +42,9 @@ const newChildId = ref<number | null>(null)
 const newRelationType = ref<FoodItemRelationType>(FoodItemRelationType.CONTAINS)
 const adding = ref(false)
 
+const addingAlternativeToRelationId = ref<number | null>(null)
+const newAlternativeChildId = ref<number | null>(null)
+
 const selectableFoodItems = computed(() =>
   allFoodItems.value.filter((item) => item.id !== id.value),
 )
@@ -68,6 +76,21 @@ watchEffect(async () => {
     toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to fetch food item' })
     console.error('Error fetching food item:', error)
   }
+})
+
+const expandedRows = ref<Record<number, boolean>>({})
+
+watchEffect(() => {
+  if (!foodItem.value) {
+    expandedRows.value = {}
+    return
+  }
+  expandedRows.value = Object.fromEntries(
+    foodItem.value.children.map((relation) => [
+      relation.id,
+      relation.alternatives.length > 0 || relation.id === addingAlternativeToRelationId.value,
+    ]),
+  )
 })
 
 async function saveNewName() {
@@ -128,6 +151,45 @@ async function addChild() {
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to add child' })
     console.error('Error adding child:', error)
+  } finally {
+    adding.value = false
+  }
+}
+
+async function addAlternative() {
+  if (
+    !foodItem.value ||
+    newAlternativeChildId.value === null ||
+    addingAlternativeToRelationId.value === null
+  )
+    return
+  adding.value = true
+  try {
+    await foodItemsApi.addAlternative(
+      foodItem.value.id,
+      addingAlternativeToRelationId.value,
+      newAlternativeChildId.value,
+    )
+    newAlternativeChildId.value = null
+    addingAlternativeToRelationId.value = null
+    foodItem.value = await foodItemsApi.get(foodItem.value.id)
+  } catch (error) {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to add alternative' })
+    console.error('Error adding alternative:', error)
+  } finally {
+    adding.value = false
+  }
+}
+
+async function removeAlternative(alternative: FoodItemRelationAlternative) {
+  if (!foodItem.value) return
+  adding.value = true
+  try {
+    await foodItemsApi.removeAlternative(foodItem.value.id, alternative.relationId, alternative.id)
+    foodItem.value = await foodItemsApi.get(foodItem.value.id)
+  } catch (error) {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to remove alternative' })
+    console.error('Error removing alternative:', error)
   } finally {
     adding.value = false
   }
@@ -214,7 +276,12 @@ async function addChildrenFromParsedContents(foodItemIds: number[]) {
       />
     </div>
     <Panel>
-      <DataTable :value="foodItem.children" :loading="!foodItem">
+      <DataTable
+        :value="foodItem.children"
+        :loading="!foodItem"
+        dataKey="id"
+        v-model:expandedRows="expandedRows"
+      >
         <template #empty>Det här livsmedlet har inget innehåll registrerat.</template>
         <Column :headerStyle="{ width: '150px' }">
           <template #body="{ data }: { data: FoodItemRelation }">
@@ -240,6 +307,13 @@ async function addChildrenFromParsedContents(foodItemIds: number[]) {
         <Column>
           <template #body="{ data }: { data: FoodItemRelation }">
             <Button
+              icon="pi pi-arrow-right-arrow-left"
+              severity="secondary"
+              text
+              aria-label="Lägg till alternativ"
+              @click="addingAlternativeToRelationId = data.id"
+            />
+            <Button
               icon="pi pi-trash"
               severity="danger"
               text
@@ -248,6 +322,76 @@ async function addChildrenFromParsedContents(foodItemIds: number[]) {
             />
           </template>
         </Column>
+        <template #expansion="{ data }: { data: FoodItemRelation }">
+          <div
+            v-if="data.alternatives.length > 0 || addingAlternativeToRelationId === data.id"
+            style="display: flex"
+          >
+            <div style="width: 150px">
+              <i class="pi pi-arrow-down-right" style="font-size: 35px" />
+            </div>
+            <div style="margin-bottom: 1.5em">
+              <b>Alternativ till {{ data.child.svName }}:</b>
+              <DataTable
+                :value="data.alternatives"
+                :loading="!foodItem"
+                dataKey="id"
+                size="small"
+                responsiveLayout="scroll"
+              >
+                <Column>
+                  <template #body="{ data: alt }: { data: FoodItemRelationAlternative }">
+                    <RouterLink :to="`/food-items/${alt.replacementFoodItem.id}`">
+                      {{ alt.replacementFoodItem.svName }}
+                    </RouterLink>
+                  </template>
+                </Column>
+                <Column>
+                  <template #body="{ data: alt }: { data: FoodItemRelationAlternative }">
+                    <Tag
+                      v-for="category in alt.replacementFoodItem.categories"
+                      :key="category.id"
+                      :value="category.svName"
+                      :severity="category.optional ? 'warn' : 'danger'"
+                      style="margin-right: 4px"
+                    />
+                  </template>
+                </Column>
+                <Column>
+                  <template #body="{ data }: { data: FoodItemRelationAlternative }">
+                    <Button
+                      icon="pi pi-trash"
+                      severity="danger"
+                      size="small"
+                      text
+                      aria-label="Ta bort"
+                      @click="removeAlternative(data)"
+                    />
+                  </template>
+                </Column>
+              </DataTable>
+              <div style="margin: 1em 0px">
+                <Select
+                  v-model="newAlternativeChildId"
+                  :options="selectableFoodItems"
+                  option-label="svName"
+                  option-value="id"
+                  placeholder="Välj livsmedel"
+                  filter
+                  autoFilterFocus
+                  show-clear
+                />
+                <Button
+                  icon="pi pi-plus"
+                  label="Lägg till alternativ"
+                  :loading="adding"
+                  :disabled="newAlternativeChildId === null"
+                  @click="addAlternative"
+                />
+              </div>
+            </div>
+          </div>
+        </template>
       </DataTable>
 
       <template #footer>

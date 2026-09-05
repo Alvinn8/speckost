@@ -33,6 +33,14 @@ export interface FoodItemRelation {
   relationType: FoodItemRelationType
   optional: boolean
   child: FoodItem
+  alternatives: FoodItemRelationAlternative[]
+}
+
+export interface FoodItemRelationAlternative {
+  id: number
+  relationId: number
+  replacementFoodItemId: number
+  replacementFoodItem: FoodItem
 }
 
 export interface FoodItemWithChildren extends FoodItem {
@@ -66,19 +74,40 @@ export interface PersonWithData {
   groups: PersonGroup[]
 }
 
-export type Verdict = 'COMPATIBLE' | 'INCOMPATIBLE' | 'OPTIONAL_COMPATIBLE'
+export type Verdict =
+  'COMPATIBLE' | 'INCOMPATIBLE' | 'OPTIONAL_COMPATIBLE' | 'ALTERNATIVE_COMPATIBLE'
+
+export interface ViaAlternative {
+  relationId: number
+  replacedFoodItemId: number
+  alternativeFoodItemId: number
+}
 
 export interface CompatibilityHit {
-  verdict: Verdict
+  verdict: 'INCOMPATIBLE' | 'OPTIONAL_COMPATIBLE'
   restrictionId: number
   path: number[]
   /** Whether the food item is only reached when optional relations are included. */
   optional: boolean
+  /**
+   * Set when this hit is only reached after swapping in an alternative food item
+   * that then turned out to be incompatible as well. Absent for main-path hits.
+   */
+  viaAlternative?: ViaAlternative
+}
+
+export interface AlternativeResolution {
+  relationId: number
+  path: number[]
+  originalFoodItemId: number
+  originalHits: CompatibilityHit[]
+  alternativeFoodItemId: number
 }
 
 export interface CompatibilityResult {
   verdict: Verdict
   hits: CompatibilityHit[]
+  alternativeResolutions: AlternativeResolution[]
 }
 
 export type GroupCompatibilityResult = {

@@ -40,9 +40,10 @@ model FoodItem {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  relationsAsParent FoodItemRelation[] @relation("Parent")
-  relationsAsChild  FoodItemRelation[] @relation("Child")
-  restrictions      Restriction[]
+  relationsAsParent            FoodItemRelation[]            @relation("Parent")
+  relationsAsChild             FoodItemRelation[]            @relation("Child")
+  restrictions                 Restriction[]
+  foodItemRelationAlternatives FoodItemRelationAlternative[]
 }
 
 enum FoodItemRelationType {
@@ -65,8 +66,24 @@ model FoodItemRelation {
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
 
-  parent FoodItem @relation("Parent", fields: [fromId], references: [id])
-  child  FoodItem @relation("Child", fields: [toId], references: [id])
+  parent       FoodItem                      @relation("Parent", fields: [fromId], references: [id])
+  child        FoodItem                      @relation("Child", fields: [toId], references: [id])
+  alternatives FoodItemRelationAlternative[]
+}
+
+/**
+ * An alternative food item for a relation. For example, if a sandwich
+ * contains cheese, an alternative could be vegan cheese.
+ */
+model FoodItemRelationAlternative {
+  id                    Int      @id @default(autoincrement())
+  relationId            Int
+  replacementFoodItemId Int
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  relation            FoodItemRelation @relation(fields: [relationId], references: [id])
+  replacementFoodItem FoodItem         @relation(fields: [replacementFoodItemId], references: [id])
 }
 
 model Person {

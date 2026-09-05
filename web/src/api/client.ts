@@ -1,6 +1,7 @@
 import type {
   FoodItem,
   FoodItemRelation,
+  FoodItemRelationAlternative,
   FoodItemRelationType,
   FoodItemType,
   FoodItemWithChildren,
@@ -78,6 +79,17 @@ export const foodItemsApi = {
     }),
   removeChild: (id: number, relationId: number) =>
     deleteRequest<void>(`/api/food-items/${id}/children/${relationId}`),
+  addAlternative: (foodItemId: number, relationId: number, replacementFoodItemId: number) =>
+    postRequest<FoodItemRelationAlternative>(
+      `/api/food-items/${foodItemId}/children/${relationId}/alternatives`,
+      {
+        replacementFoodItemId,
+      },
+    ),
+  removeAlternative: (foodItemId: number, relationId: number, alternativeId: number) =>
+    deleteRequest<void>(
+      `/api/food-items/${foodItemId}/children/${relationId}/alternatives/${alternativeId}`,
+    ),
 }
 
 export const restrictionsApi = {

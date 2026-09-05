@@ -92,7 +92,7 @@ router.get('/:id', async (req, res) => {
       where: { id },
       include: {
         relationsAsParent: {
-          include: { child: true },
+          include: { child: true, alternatives: { include: { replacementFoodItem: true } } },
           orderBy: { id: 'asc' },
         },
       },
@@ -107,6 +107,10 @@ router.get('/:id', async (req, res) => {
     ...withCategories(rest, categoriesMap),
     children: relationsAsParent.map((item) => ({
       ...item,
+      alternatives: item.alternatives.map((alt) => ({
+        ...alt,
+        replacementFoodItem: withCategories(alt.replacementFoodItem, categoriesMap),
+      })),
       child: withCategories(item.child, categoriesMap),
     })),
   })
@@ -195,6 +199,55 @@ router.delete('/:id/children/:relationId', async (req, res) => {
   }
 
   await db.foodItemRelation.delete({ where: { id: relationId } })
+  return res.status(204).send()
+})
+
+router.post('/:id/children/:relationId/alternatives', async (req, res) => {
+  const id = Number(req.params.id)
+  const relationId = Number(req.params.relationId)
+  const replacementFoodItemId = Number(req.body.replacementFoodItemId)
+
+  const relation = await db.foodItemRelation.findUnique({ where: { id: relationId } })
+  if (!relation || relation.fromId !== id) {
+    return res.status(404).json({ error: 'Relation not found' })
+  }
+
+  const foodItem = await db.foodItem.findUnique({ where: { id: replacementFoodItemId } })
+  if (!foodItem) {
+    return res.status(404).json({ error: 'Food item not found' })
+  }
+
+  const existing = await db.foodItemRelationAlternative.findFirst({
+    where: { relationId, replacementFoodItemId },
+  })
+  if (existing) {
+    return res.status(409).json({ error: 'That alternative already exists' })
+  }
+
+  const alternative = await db.foodItemRelationAlternative.create({
+    data: { relationId, replacementFoodItemId },
+  })
+  return res.status(201).json(alternative)
+})
+
+router.delete('/:id/children/:relationId/alternatives/:alternativeId', async (req, res) => {
+  const id = Number(req.params.id)
+  const relationId = Number(req.params.relationId)
+  const alternativeId = Number(req.params.alternativeId)
+
+  const relation = await db.foodItemRelation.findUnique({ where: { id: relationId } })
+  if (!relation || relation.fromId !== id) {
+    return res.status(404).json({ error: 'Relation not found' })
+  }
+
+  const alternative = await db.foodItemRelationAlternative.findUnique({
+    where: { id: alternativeId },
+  })
+  if (!alternative || alternative.relationId !== relationId) {
+    return res.status(404).json({ error: 'Alternative not found' })
+  }
+
+  await db.foodItemRelationAlternative.delete({ where: { id: alternativeId } })
   return res.status(204).send()
 })
 
