@@ -106,11 +106,16 @@ const tableRows = computed<TableRowData[]>(() => {
 })
 
 const restrictionMatchesSummary = computed(() => {
-  const restrictionMatchCounts = new Map<string, number>() // key is CSV of distinct restriction IDs, sorted for uniqueness
+  const restrictionMatchCounts = new Map<string, number>()
   for (const row of tableRows.value) {
     if (row.hits.length === 0 && row.alternativeResolutions.length === 0) continue
-    const restrictionNames = row.hits
-      .map((hit) => hit.restrictionId)
+    const restrictionIds = [
+      ...row.hits.map((hit) => hit.restrictionId),
+      ...row.alternativeResolutions.flatMap((resolution) =>
+        resolution.originalHits.map((hit) => hit.restrictionId),
+      ),
+    ]
+    const restrictionNames = restrictionIds
       .filter((id, index, array) => array.indexOf(id) === index) // https://stackoverflow.com/a/14438954
       .sort((a, b) => a - b)
       .map((id) => getRestriction(id)?.svName)
@@ -123,12 +128,17 @@ const restrictionMatchesSummary = computed(() => {
         return `Ersätt ${originalFoodItem?.svName} med ${alternativeFoodItem?.svName}`
       })
       .sort()
-      .join(', ')
-    const text = [restrictionNames, replacementText].filter((s) => s.length > 0).join('. ')
+      .join('Y_SEPARATOR_Y') // TODO so hacky D;
+    const text = [restrictionNames, replacementText]
+      .filter((s) => s.length > 0)
+      .join('X_SEPARATOR_X') // TODO hacky
     restrictionMatchCounts.set(text, (restrictionMatchCounts.get(text) ?? 0) + 1)
   }
   return Array.from(restrictionMatchCounts.entries()).map(([restrictions, count]) => {
-    return { restrictions, count }
+    const parts = restrictions.split('X_SEPARATOR_X')
+    const restrictionNames = parts[0]
+    const replacementTexts = (parts[1] || '').split('Y_SEPARATOR_Y').filter((s) => s.length > 0)
+    return { restrictions: restrictionNames, replacementTexts, count }
   })
 })
 
@@ -188,6 +198,11 @@ function restrictionNamesOf(hits: CompatibilityHit[]) {
   <ul>
     <li v-for="(summary, index) in restrictionMatchesSummary" :key="index">
       {{ summary.count }} {{ summary.restrictions }}
+      <ul v-if="summary.replacementTexts.length > 0">
+        <li v-for="(text, i) in summary.replacementTexts" :key="i">
+          {{ text }}
+        </li>
+      </ul>
     </li>
   </ul>
   <h3>Alla träffar</h3>

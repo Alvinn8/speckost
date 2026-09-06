@@ -370,7 +370,7 @@ async function addChildrenFromParsedContents(foodItemIds: number[]) {
                   </template>
                 </Column>
               </DataTable>
-              <div style="margin: 1em 0px">
+              <div v-if="addingAlternativeToRelationId === data.id" style="margin: 1em 0px">
                 <Select
                   v-model="newAlternativeChildId"
                   :options="selectableFoodItems"
@@ -389,6 +389,13 @@ async function addChildrenFromParsedContents(foodItemIds: number[]) {
                   @click="addAlternative"
                 />
               </div>
+              <Button
+                v-else
+                icon="pi pi-arrow-right-arrow-left"
+                label="Lägg till alternativ"
+                severity="secondary"
+                @click="addingAlternativeToRelationId = data.id"
+              />
             </div>
           </div>
         </template>
